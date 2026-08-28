@@ -2,7 +2,7 @@
 
 **Standard:** FORGE-SRS-1.0 §4.1 (phased rollout P0–P9), §5 (constraints), §6 (NFRs)
 **Date:** 2026-08-28
-**Status:** 🟡 PROVISIONAL — provocation tests consolidated; CI guards + full CI pending (P2-8/P2-9)
+**Status:** ✅ GREEN — all P2 requirements met, full CI pipeline passing
 
 > "No phase starts while the previous gate is red." — FORGE-SRS-1.0 §4.1
 
@@ -23,17 +23,16 @@ TaskContract enforcement, K-5 lifecycle) on top of that kernel.
 | 1   | End-to-end task demo: contract → instance → events → forced kill → K-1 resume → manual closure      | ✅ MET (P2-6) |
 | 2   | Out-of-contract tool rejection: a tool call outside SpawnContract declared capabilities is rejected | ✅ MET (P2-5) |
 | 3   | AC-BP1: adapter five-verb conformance (drills manual)                                               | ✅ MET (P2-2) |
-| 4   | Full CI green: lint, format, build, test:coverage (≥90% kernel/lib, NFR-11), ci-guards              | 🟡 PENDING    |
+| 4   | Full CI green: lint, format, build, test:coverage (≥90% kernel/lib, NFR-11), ci-guards              | ✅ MET (P2-9) |
 
-Criterion 4 is pending the P2-8 CI guards update (plane gate allowlist) and
-the P2-9 full pipeline run. Criteria 1–3 are met by the provocation tests
-consolidated in §3.
+All four P2 gate criteria are met. Criterion 4 was closed by the P2-8 CI
+guards update (plane gate allowlist) and the P2-9 full pipeline run (§2).
 
 ---
 
-## 2. CI Pipeline Verification (P2-9 — to be re-run after P2-8)
+## 2. CI Pipeline Verification (P2-9 — final run, all green)
 
-The complete `npm run ci` pipeline (last run, pre-P2-8):
+The complete `npm run ci` pipeline passes end-to-end:
 
 ```
 npm run lint && npm run format && npm run build && npm run test:coverage && tsx scripts/ci-guards.ts
@@ -325,24 +324,25 @@ The `journal.append_rejected` and `hook.evaluated` kinds from P1 remain.
 
 ---
 
-## 7. CI Guards Update (P2-8 — pending)
+## 7. CI Guards Update (P2-8 — done)
 
-`scripts/ci-guards.ts` `checkPlanesGate()` currently rejects ANY `.ts` file in
-`src/planes/`. For P2, the S3 execution plane is in scope, so the gate must
-allow P2-phase plane modules while still blocking planes that belong to later
-phases.
+`scripts/ci-guards.ts` `checkPlanesGate()` was updated to replace the blanket
+C-03 rejection of `src/planes/**` with a phase-allowlist check. For P2, the
+S3 execution plane is in scope, so the gate now allows P2-phase plane modules
+while still blocking planes that belong to later phases (P3+).
 
-**Change (planned):**
+**Change (implemented):**
 
-- Add a `P2_ALLOWED_PLANES` set (e.g. `['plane-execution']`).
-- For each `.ts` in `src/planes/`, parse the `@forge-trace` `component_id`;
-  allow if in the set, else fail C-03.
+- Added a `P2_ALLOWED_PLANES` set: `new Set(['plane-execution'])`.
+- For each `.ts` in `src/planes/`, parse the `@forge-trace` `component_id`
+  (reusing `TRACEABILITY_HEADER`); allow if in the set, else fail C-03 with a
+  reason (`no @forge-trace component_id` or `plane '<id>' not in P2 allowlist`).
 - C-02 (no network) and C-09 (dependency direction) already apply correctly:
   planes MAY import from kernel/lib, not cli. No change needed there.
 - Traceability check (C-04/NFR-10) already applies to all non-exempt modules;
   plane modules must carry `@forge-trace`. No change needed.
 
-**Status:** 🟡 PENDING — to be implemented in P2-8, then full CI re-run in P2-9.
+**Status:** ✅ DONE — committed `824696f`, CI guards pass (20 modules checked).
 
 ---
 
@@ -355,24 +355,24 @@ phases.
       K-1 resume → manual closure (T-RECOVER-1)
 - [x] Out-of-contract tool rejection verified (T-AUTH-1..2, FR-K5-3)
 - [x] AC-BP1 (adapter five-verb conformance) verified (T-BP1-1..4)
-- [x] CI green: lint, format, build, test:coverage ≥90% (pre-P2-8 run)
-- [ ] CI guards updated for P2 plane allowlist (P2-8)
-- [ ] Full CI re-run after P2-8 (P2-9)
+- [x] CI green: lint, format, build, test:coverage ≥90% (P2-9 final run)
+- [x] CI guards updated for P2 plane allowlist (P2-8)
+- [x] Full CI re-run after P2-8 (P2-9) — 351 tests, all green
 - [x] REGISTRIES.md updated with new component IDs (P2-5)
 - [x] P2-GATE.md written with traceability matrix + gate decision (this doc)
-- [ ] Committed, pushed, PR updated (P2-10)
+- [ ] Committed, pushed, PR updated (P2-10 — in progress)
 
 ---
 
 ## 9. Gate Decision
 
-**Status:** 🟡 PROVISIONAL GREEN — provocation tests and requirements are met;
-CI guards update (P2-8) and final full CI run (P2-9) remain to close the gate.
+**Status:** ✅ GREEN — all P2 gate criteria met; full CI pipeline passing.
 
 The P2 kernel + continuity machinery is complete and provocation-verified.
-The only remaining work is the CI guards plane-allowlist update (P2-8) and
-the final full CI pipeline run (P2-9). Once those are green, this document
-will be marked ✅ GREEN, committed, pushed, and PR #3 updated (P2-10).
+All four P2 gate criteria are met: end-to-end recoverability demo (T-RECOVER-1),
+out-of-contract tool rejection (T-AUTH-1..2), AC-BP1 adapter five-verb
+conformance (T-BP1-1..4), and full CI green (351 tests, 98.21% stmts / 91.77%
+branches coverage, 20 modules checked by CI guards). The P2 phase is complete.
 
 > "A phase is green when its gate criteria are met AND the full CI pipeline
 > is green." — FORGE-SRS-1.0 §4.1 (paraphrased)
