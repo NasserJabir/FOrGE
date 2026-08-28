@@ -281,6 +281,63 @@ export class ContractStore {
     this.store(art);
     return art;
   }
+
+  /**
+   * Create a TaskContract (FR-K2-6, AC-BP10). A task SHALL NOT start managed
+   * execution without a TaskContract; remaining assumptions enter as Assumption
+   * claims at zero confidence (enforced by TaskContractGate).
+   *
+   * The body embeds the taskId and assumptions in a structured, parseable
+   * Markdown form so the gate can match a contract to a task and surface
+   * assumptions without re-parsing frontmatter.
+   */
+  createTaskContract(input: {
+    taskId: string;
+    objective: string;
+    scope?: string;
+    createdBy: string;
+    assumptions: Array<{ text: string }>;
+  }): Artifact {
+    const artifactId = `tc-${ulid()}`;
+    const now = new Date().toISOString();
+    const lines: string[] = [
+      `# Task Contract`,
+      ``,
+      `taskId: ${input.taskId}`,
+      ``,
+      `**Objective:** ${input.objective}`,
+      ``,
+      `**Scope:** ${input.scope ?? 'project'}`,
+      ``,
+      `## Assumptions`,
+    ];
+    if (input.assumptions.length === 0) {
+      lines.push(`_(none)_`);
+    } else {
+      for (const a of input.assumptions) {
+        lines.push(`- ${a.text}`);
+      }
+    }
+    const body = lines.join('\n');
+    const fm: Frontmatter = {
+      artifactId,
+      artifactType: 'TaskContract',
+      version: 1,
+      createdAt: now,
+      createdBy: input.createdBy,
+      status: 'approved',
+      scope: input.scope ?? 'project',
+      lifecycleState: 'approved',
+      contentHash: '', // computed below
+      provenance: [{ source: input.createdBy, ts: now }],
+      evidenceRefs: [],
+      trustLabel: 'trusted/user',
+    };
+    const contentHash = sha256Hex(canonicalJson({ body, frontmatter: stripHash(fm) }));
+    const art: Artifact = { frontmatter: { ...fm, contentHash }, body };
+    this.store(art);
+    return art;
+  }
 }
 
 /**
