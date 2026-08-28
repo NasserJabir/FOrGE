@@ -26,6 +26,7 @@ Format: `<kernel|lib|cli|plane>-<name>`
 | kernel-agent-registry | src/kernel/agent-registry.ts | P1 | K-5 durable AgentIdentity records (structure) |
 | kernel-trust-label | src/kernel/trust-label.ts | P1 | Trust label computation (weakest-of) — DEC-42.1 |
 | kernel-storage-port | src/kernel/storage-port.ts | P1 | Storage abstraction (better-sqlite3 behind port) |
+| kernel-storage-memory | src/kernel/storage-memory.ts | P1 | In-memory JournalStorage (tests + reference impl) |
 | kernel-schema-registry | src/kernel/schema-registry.ts | P1 | Event kind + artifact type schema registration |
 | lib-ulid | src/lib/ulid.ts | P1 | ULID generation (C-01) |
 | lib-hash | src/lib/hash.ts | P1 | SHA-256 hashing helpers |
