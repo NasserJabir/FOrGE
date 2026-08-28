@@ -17,23 +17,24 @@ Every module under `src/` (except `src/cli/index.ts`, the composition root) MUST
 
 Format: `<kernel|lib|cli|plane>-<name>`
 
-| component_id           | Path                          | Phase | Summary                                                            |
-| ---------------------- | ----------------------------- | ----- | ------------------------------------------------------------------ |
-| kernel-canonical-json  | src/kernel/canonical-json.ts  | P1    | Fixed canonical JSON algorithm (sorted keys, no whitespace, UTF-8) |
-| kernel-event-journal   | src/kernel/event-journal.ts   | P1    | K-1 append-only content-addressed event journal                    |
-| kernel-contract-store  | src/kernel/contract-store.ts  | P1    | K-2 typed Tier-A artifact store                                    |
-| kernel-policy-hooks    | src/kernel/policy-hooks.ts    | P1    | K-4 five hook points, shadow-locked                                |
-| kernel-adapter-spi     | src/kernel/adapter-spi.ts     | P2    | K-3 Adapter SPI (BP-1): five verbs + Enforcement Map (IF-01/IF-05) |
-| kernel-agent-registry  | src/kernel/agent-registry.ts  | P1    | K-5 durable AgentIdentity records (structure)                      |
-| kernel-trust-label     | src/kernel/trust-label.ts     | P1    | Trust label computation (weakest-of) — DEC-42.1                    |
-| kernel-storage-port    | src/kernel/storage-port.ts    | P1    | Storage abstraction (better-sqlite3 behind port)                   |
-| kernel-storage-memory  | src/kernel/storage-memory.ts  | P1    | In-memory JournalStorage (tests + reference impl)                  |
-| kernel-schema-registry | src/kernel/schema-registry.ts | P1    | Event kind + artifact type schema registration                     |
-| lib-ulid               | src/lib/ulid.ts               | P1    | ULID generation (C-01)                                             |
-| lib-hash               | src/lib/hash.ts               | P1    | SHA-256 hashing helpers                                            |
-| lib-secret-patterns    | src/lib/secret-patterns.ts    | P1    | Secret pattern set for FR-K1-7                                     |
-| cli-commands           | src/cli/commands.ts           | P1    | S7 CLI command implementations                                     |
-| cli-index              | src/cli/index.ts              | P1    | CLI entrypoint (composition root, exempt from trace)               |
+| component_id           | Path                          | Phase | Summary                                                             |
+| ---------------------- | ----------------------------- | ----- | ------------------------------------------------------------------- |
+| kernel-canonical-json  | src/kernel/canonical-json.ts  | P1    | Fixed canonical JSON algorithm (sorted keys, no whitespace, UTF-8)  |
+| kernel-event-journal   | src/kernel/event-journal.ts   | P1    | K-1 append-only content-addressed event journal                     |
+| kernel-contract-store  | src/kernel/contract-store.ts  | P1    | K-2 typed Tier-A artifact store                                     |
+| kernel-policy-hooks    | src/kernel/policy-hooks.ts    | P1    | K-4 five hook points, shadow-locked                                 |
+| kernel-adapter-spi     | src/kernel/adapter-spi.ts     | P2    | K-3 Adapter SPI (BP-1): five verbs + Enforcement Map (IF-01/IF-05)  |
+| kernel-run-state       | src/kernel/run-state.ts       | P2    | K-15 RunState event-sourced from K-1, write-ahead (FR-S3-1/FR-K1-9) |
+| kernel-agent-registry  | src/kernel/agent-registry.ts  | P1    | K-5 durable AgentIdentity records (structure)                       |
+| kernel-trust-label     | src/kernel/trust-label.ts     | P1    | Trust label computation (weakest-of) — DEC-42.1                     |
+| kernel-storage-port    | src/kernel/storage-port.ts    | P1    | Storage abstraction (better-sqlite3 behind port)                    |
+| kernel-storage-memory  | src/kernel/storage-memory.ts  | P1    | In-memory JournalStorage (tests + reference impl)                   |
+| kernel-schema-registry | src/kernel/schema-registry.ts | P1    | Event kind + artifact type schema registration                      |
+| lib-ulid               | src/lib/ulid.ts               | P1    | ULID generation (C-01)                                              |
+| lib-hash               | src/lib/hash.ts               | P1    | SHA-256 hashing helpers                                             |
+| lib-secret-patterns    | src/lib/secret-patterns.ts    | P1    | Secret pattern set for FR-K1-7                                      |
+| cli-commands           | src/cli/commands.ts           | P1    | S7 CLI command implementations                                      |
+| cli-index              | src/cli/index.ts              | P1    | CLI entrypoint (composition root, exempt from trace)                |
 
 ---
 
