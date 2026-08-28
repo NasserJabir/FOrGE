@@ -281,6 +281,177 @@ export class ContractStore {
     this.store(art);
     return art;
   }
+
+  /**
+   * Create a TaskContract (FR-K2-6, AC-BP10). A task SHALL NOT start managed
+   * execution without a TaskContract; remaining assumptions enter as Assumption
+   * claims at zero confidence (enforced by TaskContractGate).
+   *
+   * The body embeds the taskId and assumptions in a structured, parseable
+   * Markdown form so the gate can match a contract to a task and surface
+   * assumptions without re-parsing frontmatter.
+   */
+  createTaskContract(input: {
+    taskId: string;
+    objective: string;
+    scope?: string;
+    createdBy: string;
+    assumptions: Array<{ text: string }>;
+  }): Artifact {
+    const artifactId = `tc-${ulid()}`;
+    const now = new Date().toISOString();
+    const lines: string[] = [
+      `# Task Contract`,
+      ``,
+      `taskId: ${input.taskId}`,
+      ``,
+      `**Objective:** ${input.objective}`,
+      ``,
+      `**Scope:** ${input.scope ?? 'project'}`,
+      ``,
+      `## Assumptions`,
+    ];
+    if (input.assumptions.length === 0) {
+      lines.push(`_(none)_`);
+    } else {
+      for (const a of input.assumptions) {
+        lines.push(`- ${a.text}`);
+      }
+    }
+    const body = lines.join('\n');
+    const fm: Frontmatter = {
+      artifactId,
+      artifactType: 'TaskContract',
+      version: 1,
+      createdAt: now,
+      createdBy: input.createdBy,
+      status: 'approved',
+      scope: input.scope ?? 'project',
+      lifecycleState: 'approved',
+      contentHash: '', // computed below
+      provenance: [{ source: input.createdBy, ts: now }],
+      evidenceRefs: [],
+      trustLabel: 'trusted/user',
+    };
+    const contentHash = sha256Hex(canonicalJson({ body, frontmatter: stripHash(fm) }));
+    const art: Artifact = { frontmatter: { ...fm, contentHash }, body };
+    this.store(art);
+    return art;
+  }
+
+  /**
+   * Create a SpawnContract (FR-K5-3/4, INV-2). The operational constraint
+   * document for a managed spawn. can_commit defaults false (FR-K5-3). Empty
+   * context grants = full privacy (FR-K5-3 last clause).
+   *
+   * The body embeds the identityId, taskId, grantedAuthority, can_commit, and
+   * context grants in a structured, parseable Markdown form.
+   */
+  createSpawnContract(input: {
+    identityId: string;
+    taskId: string;
+    grantedAuthority: string;
+    canCommit?: boolean;
+    contextGrants: Array<{ items: string[]; scope: string; ttl?: number }>;
+    createdBy: string;
+  }): Artifact {
+    const artifactId = `sc-${ulid()}`;
+    const now = new Date().toISOString();
+    const canCommit = input.canCommit ?? false;
+    const lines: string[] = [
+      `# Spawn Contract`,
+      ``,
+      `identityId: ${input.identityId}`,
+      `taskId: ${input.taskId}`,
+      ``,
+      `**Granted authority:** ${input.grantedAuthority}`,
+      ``,
+      `can_commit: ${canCommit}`,
+      ``,
+      `## Context Grants`,
+    ];
+    if (input.contextGrants.length === 0) {
+      lines.push(`_(none — full privacy)_`);
+    } else {
+      for (const g of input.contextGrants) {
+        const ttl = g.ttl !== undefined ? ` (TTL: ${g.ttl}s)` : '';
+        lines.push(`- scope: ${g.scope}${ttl}`);
+        lines.push(`  items: ${g.items.join(', ')}`);
+      }
+    }
+    const body = lines.join('\n');
+    const fm: Frontmatter = {
+      artifactId,
+      artifactType: 'SpawnContract',
+      version: 1,
+      createdAt: now,
+      createdBy: input.createdBy,
+      status: 'approved',
+      scope: 'project',
+      lifecycleState: 'approved',
+      contentHash: '', // computed below
+      provenance: [{ source: input.createdBy, ts: now }],
+      evidenceRefs: [],
+      trustLabel: 'trusted/user',
+    };
+    const contentHash = sha256Hex(canonicalJson({ body, frontmatter: stripHash(fm) }));
+    const art: Artifact = { frontmatter: { ...fm, contentHash }, body };
+    this.store(art);
+    return art;
+  }
+
+  /**
+   * Create a ContextGrant artifact (FR-K5-5). Explicit, scoped (read-only or
+   * read-comment, never write), revocable, reason required. The artifact is
+   * the durable record; the live grant/revocation is journaled by
+   * ContextGrantStore.
+   */
+  createContextGrant(input: {
+    granter: string;
+    grantee: string;
+    items: string[];
+    scope: string;
+    ttl?: number;
+    reason: string;
+  }): Artifact {
+    const artifactId = `cg-${ulid()}`;
+    const now = new Date().toISOString();
+    const lines: string[] = [
+      `# Context Grant`,
+      ``,
+      `**Granter:** ${input.granter}`,
+      ``,
+      `**Grantee:** ${input.grantee}`,
+      ``,
+      `**Scope:** ${input.scope}`,
+      ``,
+      `**Items:** ${input.items.join(', ')}`,
+      ``,
+      `**Reason:** ${input.reason}`,
+    ];
+    if (input.ttl !== undefined) {
+      lines.push(``, `**TTL:** ${input.ttl}s`);
+    }
+    const body = lines.join('\n');
+    const fm: Frontmatter = {
+      artifactId,
+      artifactType: 'ContextGrant',
+      version: 1,
+      createdAt: now,
+      createdBy: input.granter,
+      status: 'approved',
+      scope: 'project',
+      lifecycleState: 'approved',
+      contentHash: '', // computed below
+      provenance: [{ source: input.granter, ts: now }],
+      evidenceRefs: [],
+      trustLabel: 'trusted/user',
+    };
+    const contentHash = sha256Hex(canonicalJson({ body, frontmatter: stripHash(fm) }));
+    const art: Artifact = { frontmatter: { ...fm, contentHash }, body };
+    this.store(art);
+    return art;
+  }
 }
 
 /**
