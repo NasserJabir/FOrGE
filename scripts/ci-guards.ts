@@ -133,16 +133,40 @@ function checkTraceability(filePath: string): void {
 }
 
 // C-03: no planes implementation before phase gate
+// P2: the S3 execution plane is in scope. A plane module is allowed if its
+// @forge-trace component_id is in the P2_ALLOWED_PLANES allowlist. Planes not
+// on the allowlist are rejected with the same C-03 message. This blocks
+// planes that belong to later phases (P3+) while unblocking P2-phase planes.
+const P2_ALLOWED_PLANES: ReadonlySet<string> = new Set(['plane-execution']);
+
 function checkPlanesGate(): void {
   const planesDir = join(SRC, 'planes');
   if (!existsSync(planesDir)) return;
   const files = walk(planesDir);
-  // P1 gate: only .gitkeep or empty marker files allowed; no .ts implementation
   const tsFiles = files.filter((f) => f.endsWith('.ts'));
   for (const f of tsFiles) {
-    fail(
-      `C-03 violation: implementation source ${relative(SRC, f)} in src/planes before its phase gate`,
-    );
+    const rel = relative(SRC, f);
+    const content = readFileSync(f, 'utf8');
+    const match = TRACEABILITY_HEADER.exec(content);
+    let componentId: string | null = null;
+    if (match && match.groups && match.groups.json) {
+      try {
+        const rec = JSON.parse(match.groups.json) as TraceRecord;
+        componentId = rec.component_id;
+      } catch {
+        // malformed JSON — fall through to traceability check which will report it
+      }
+    }
+    const allowed = componentId !== null && P2_ALLOWED_PLANES.has(componentId);
+    if (!allowed) {
+      const reason =
+        componentId === null
+          ? `no @forge-trace component_id in ${rel}`
+          : `plane '${componentId}' not in P2 allowlist`;
+      fail(
+        `C-03 violation: implementation source ${rel} in src/planes before its phase gate (${reason})`,
+      );
+    }
   }
 }
 

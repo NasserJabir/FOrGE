@@ -18,12 +18,12 @@ TaskContract enforcement, K-5 lifecycle) on top of that kernel.
 
 ## 1. P2 Gate Criteria (from FORGE-SRS-1.0 §4.1)
 
-| #   | Criterion                                                                                                       | Status        |
-| --- | --------------------------------------------------------------------------------------------------------------- | ------------- |
-| 1   | End-to-end task demo: contract → instance → events → forced kill → K-1 resume → manual closure                   | ✅ MET (P2-6) |
-| 2   | Out-of-contract tool rejection: a tool call outside SpawnContract declared capabilities is rejected             | ✅ MET (P2-5) |
-| 3   | AC-BP1: adapter five-verb conformance (drills manual)                                                            | ✅ MET (P2-2) |
-| 4   | Full CI green: lint, format, build, test:coverage (≥90% kernel/lib, NFR-11), ci-guards                           | 🟡 PENDING    |
+| #   | Criterion                                                                                           | Status        |
+| --- | --------------------------------------------------------------------------------------------------- | ------------- |
+| 1   | End-to-end task demo: contract → instance → events → forced kill → K-1 resume → manual closure      | ✅ MET (P2-6) |
+| 2   | Out-of-contract tool rejection: a tool call outside SpawnContract declared capabilities is rejected | ✅ MET (P2-5) |
+| 3   | AC-BP1: adapter five-verb conformance (drills manual)                                               | ✅ MET (P2-2) |
+| 4   | Full CI green: lint, format, build, test:coverage (≥90% kernel/lib, NFR-11), ci-guards              | 🟡 PENDING    |
 
 Criterion 4 is pending the P2-8 CI guards update (plane gate allowlist) and
 the P2-9 full pipeline run. Criteria 1–3 are met by the provocation tests
@@ -39,37 +39,37 @@ The complete `npm run ci` pipeline (last run, pre-P2-8):
 npm run lint && npm run format && npm run build && npm run test:coverage && tsx scripts/ci-guards.ts
 ```
 
-| Step      | Tool                   | Result                              |
-| --------- | ---------------------- | ----------------------------------- |
-| Lint      | ESLint 9 (flat config) | ✅ 0 errors, 0 warnings             |
-| Format    | Prettier --check       | ✅ All files formatted              |
-| Build     | tsc --noEmit (strict)  | ✅ 0 type errors                    |
-| Tests     | Vitest                 | ✅ 351 tests passing (15 files)     |
-| Coverage  | c8/v8                  | ✅ All thresholds ≥90% (NFR-11)     |
-| CI Guards | scripts/ci-guards.ts   | ✅ 20 modules checked (pre-plane)  |
+| Step      | Tool                   | Result                            |
+| --------- | ---------------------- | --------------------------------- |
+| Lint      | ESLint 9 (flat config) | ✅ 0 errors, 0 warnings           |
+| Format    | Prettier --check       | ✅ All files formatted            |
+| Build     | tsc --noEmit (strict)  | ✅ 0 type errors                  |
+| Tests     | Vitest                 | ✅ 351 tests passing (15 files)   |
+| Coverage  | c8/v8                  | ✅ All thresholds ≥90% (NFR-11)   |
+| CI Guards | scripts/ci-guards.ts   | ✅ 20 modules checked (pre-plane) |
 
 ### Coverage Breakdown (NFR-11: ≥90% kernel/lib — GLOBAL threshold)
 
-| File                          | Stmts   | Branch  | Funcs | Lines   |
-| ----------------------------- | ------- | ------- | ----- | ------- |
-| kernel/adapter-spi.ts         | 98.43%  | 96.87%  | 100%  | 98.43%  |
-| kernel/adoption-queue.ts      | 96.96%  | 83.33%  | 100%  | 96.96%  |
-| kernel/agent-registry.ts      | 100%    | 100%    | 100%  | 100%    |
-| kernel/canonical-json.ts      | 100%    | 100%    | 100%  | 100%    |
-| kernel/context-grant.ts       | 100%    | 88.88%  | 100%  | 100%    |
-| kernel/contract-store.ts      | 100%    | 100%    | 100%  | 100%    |
-| kernel/event-journal.ts       | 94.59%  | 94.44%  | 100%  | 94.44%  |
-| kernel/policy-hooks.ts        | 97.36%  | 66.66%  | 100%  | 97.14%  |
-| kernel/run-state.ts           | 96.77%  | 85%     | 100%  | 96.77%  |
-| kernel/routing.ts             | 100%    | 100%    | 100%  | 100%    |
-| kernel/spawn-contract.ts      | 93.75%  | 83.33%  | 100%  | 93.75%  |
-| kernel/storage-memory.ts      | 100%    | 93.75%  | 100%  | 100%    |
-| kernel/task-contract.ts       | 95.55%  | 85%     | 100%  | 95.55%  |
-| kernel/trust-label.ts         | 100%    | 100%    | 100%  | 100%    |
-| lib/hash.ts                   | 100%    | 100%    | 100%  | 100%    |
-| lib/secret-patterns.ts        | 100%    | 100%    | 100%  | 100%    |
-| lib/ulid.ts                   | 100%    | 66.66%  | 100%  | 100%    |
-| **All files**                 | **98.21%** | **91.77%** | **100%** | **98.44%** |
+| File                     | Stmts      | Branch     | Funcs    | Lines      |
+| ------------------------ | ---------- | ---------- | -------- | ---------- |
+| kernel/adapter-spi.ts    | 98.43%     | 96.87%     | 100%     | 98.43%     |
+| kernel/adoption-queue.ts | 96.96%     | 83.33%     | 100%     | 96.96%     |
+| kernel/agent-registry.ts | 100%       | 100%       | 100%     | 100%       |
+| kernel/canonical-json.ts | 100%       | 100%       | 100%     | 100%       |
+| kernel/context-grant.ts  | 100%       | 88.88%     | 100%     | 100%       |
+| kernel/contract-store.ts | 100%       | 100%       | 100%     | 100%       |
+| kernel/event-journal.ts  | 94.59%     | 94.44%     | 100%     | 94.44%     |
+| kernel/policy-hooks.ts   | 97.36%     | 66.66%     | 100%     | 97.14%     |
+| kernel/run-state.ts      | 96.77%     | 85%        | 100%     | 96.77%     |
+| kernel/routing.ts        | 100%       | 100%       | 100%     | 100%       |
+| kernel/spawn-contract.ts | 93.75%     | 83.33%     | 100%     | 93.75%     |
+| kernel/storage-memory.ts | 100%       | 93.75%     | 100%     | 100%       |
+| kernel/task-contract.ts  | 95.55%     | 85%        | 100%     | 95.55%     |
+| kernel/trust-label.ts    | 100%       | 100%       | 100%     | 100%       |
+| lib/hash.ts              | 100%       | 100%       | 100%     | 100%       |
+| lib/secret-patterns.ts   | 100%       | 100%       | 100%     | 100%       |
+| lib/ulid.ts              | 100%       | 66.66%     | 100%     | 100%       |
+| **All files**            | **98.21%** | **91.77%** | **100%** | **98.44%** |
 
 All four global thresholds (branches/functions/lines/statements) are ≥90%.
 Per-file branch coverage may dip below 90% (e.g. policy-hooks 66.66%,
@@ -88,16 +88,16 @@ module, test file, and verification status.
 
 ### 3.1 Consolidation Table
 
-| Provocation  | Target                                    | Task | Requirement        | Test file                          | Status    |
-| ------------ | ----------------------------------------- | ---- | ------------------ | ---------------------------------- | --------- |
-| T-BP1-1..4   | Adapter five-verb conformance             | P2-2 | IF-01, IF-05, AC-BP1 | tests/kernel/adapter-spi.test.ts    | ✅ PASS   |
-| T-RS-1..4    | RunState declared states + write-ahead     | P2-3 | FR-S3-1, FR-K1-9, NFR-5, NFR-6 | tests/kernel/run-state.test.ts     | ✅ PASS   |
-| T-TC-1..2    | TaskContract before managed execution     | P2-4 | FR-K2-6, AC-BP10   | tests/kernel/task-contract.test.ts | ✅ PASS   |
-| T-AUTH-1..2  | Authority = identity ∩ contract           | P2-5 | FR-K5-3, INV-2, NFR-8 | tests/kernel/lifecycle.test.ts      | ✅ PASS   |
-| T-GRANT-1..2 | ContextGrant scope/reason                 | P2-5 | FR-K5-5            | tests/kernel/lifecycle.test.ts      | ✅ PASS   |
-| T-ADOPT-1    | Unmanaged spawn not auto-adopted          | P2-5 | FR-K5-7            | tests/kernel/lifecycle.test.ts      | ✅ PASS   |
-| T-ROUTE-1    | Limitations before capability claims      | P2-5 | FR-K5-2, INV-6     | tests/kernel/lifecycle.test.ts      | ✅ PASS   |
-| T-RECOVER-1  | End-to-end crash recovery                 | P2-6 | NFR-5, NFR-6, FR-K1-9, FR-K2-6 | tests/kernel/recoverability.test.ts | ✅ PASS   |
+| Provocation  | Target                                 | Task | Requirement                    | Test file                           | Status  |
+| ------------ | -------------------------------------- | ---- | ------------------------------ | ----------------------------------- | ------- |
+| T-BP1-1..4   | Adapter five-verb conformance          | P2-2 | IF-01, IF-05, AC-BP1           | tests/kernel/adapter-spi.test.ts    | ✅ PASS |
+| T-RS-1..4    | RunState declared states + write-ahead | P2-3 | FR-S3-1, FR-K1-9, NFR-5, NFR-6 | tests/kernel/run-state.test.ts      | ✅ PASS |
+| T-TC-1..2    | TaskContract before managed execution  | P2-4 | FR-K2-6, AC-BP10               | tests/kernel/task-contract.test.ts  | ✅ PASS |
+| T-AUTH-1..2  | Authority = identity ∩ contract        | P2-5 | FR-K5-3, INV-2, NFR-8          | tests/kernel/lifecycle.test.ts      | ✅ PASS |
+| T-GRANT-1..2 | ContextGrant scope/reason              | P2-5 | FR-K5-5                        | tests/kernel/lifecycle.test.ts      | ✅ PASS |
+| T-ADOPT-1    | Unmanaged spawn not auto-adopted       | P2-5 | FR-K5-7                        | tests/kernel/lifecycle.test.ts      | ✅ PASS |
+| T-ROUTE-1    | Limitations before capability claims   | P2-5 | FR-K5-2, INV-6                 | tests/kernel/lifecycle.test.ts      | ✅ PASS |
+| T-RECOVER-1  | End-to-end crash recovery              | P2-6 | NFR-5, NFR-6, FR-K1-9, FR-K2-6 | tests/kernel/recoverability.test.ts | ✅ PASS |
 
 **Total: 15 named provocation IDs across 5 test files, 108 tests.**
 
@@ -127,7 +127,7 @@ module, test file, and verification status.
 #### T-RS-1..4 — RunState declared states + write-ahead (P2-3, FR-S3-1/FR-K1-9/NFR-5/NFR-6)
 
 - **T-RS-1**: The eight declared states (`QUEUED, RUNNING, SUSPENDED,
-  INTERRUPTED, RECOVERING, RESUMING, ABORTED, CLOSED`) match the SRS state
+INTERRUPTED, RECOVERING, RESUMING, ABORTED, CLOSED`) match the SRS state
   diagram exactly; `QUEUED → RUNNING` is legal. (lines 41–61)
 - **T-RS-2**: A transition journals `runstate.transition` BEFORE the in-memory
   state advances (write-ahead, FR-K1-9). The in-memory state is disposable —
@@ -238,43 +238,43 @@ module, test file, and verification status.
 
 ### Interfaces (IF-series)
 
-| ID    | Requirement                                                                                           | Status | Evidence                                                                                                          |
-| ----- | ----------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------- |
-| IF-01 | Adapter SPI exposes exactly five verbs; provider extensions are declared capabilities only           | ✅ MET | src/kernel/adapter-spi.ts — `ADAPTER_VERBS`, `assertAdapterConformance()`; T-BP1-1..4 (35 tests)                |
-| IF-05 | Every provider binding publishes an Enforcement Map; in-band/OOB claims are provocation-tested       | ✅ MET | src/kernel/adapter-spi.ts — `EnforcementMap`, `validateEnforcementMap()`; T-BP1-3 (IF-05 completeness)             |
+| ID    | Requirement                                                                                    | Status | Evidence                                                                                               |
+| ----- | ---------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------ |
+| IF-01 | Adapter SPI exposes exactly five verbs; provider extensions are declared capabilities only     | ✅ MET | src/kernel/adapter-spi.ts — `ADAPTER_VERBS`, `assertAdapterConformance()`; T-BP1-1..4 (35 tests)       |
+| IF-05 | Every provider binding publishes an Enforcement Map; in-band/OOB claims are provocation-tested | ✅ MET | src/kernel/adapter-spi.ts — `EnforcementMap`, `validateEnforcementMap()`; T-BP1-3 (IF-05 completeness) |
 
 ### Functional Requirements — Kernel
 
-| ID      | Requirement                                                                                              | Status | Evidence                                                                                                                       |
-| ------- | -------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| FR-K1-9 | State transitions journaled before effect (write-ahead); crash mid-apply leaves prior declared state    | ✅ MET | src/kernel/run-state.ts — `transition()` journals before `states.set()`; T-RS-2, T-RECOVER-1 (FR-K1-9 sub-test)                 |
-| FR-K2-6 | No managed execution without TaskContract; remaining assumptions enter as Assumption claims at 0 conf. | ✅ MET | src/kernel/task-contract.ts — `requireContract()` (fail-closed); T-TC-1..2, T-RECOVER-1 (FR-K2-6 sub-test)                      |
+| ID      | Requirement                                                                                            | Status | Evidence                                                                                                        |
+| ------- | ------------------------------------------------------------------------------------------------------ | ------ | --------------------------------------------------------------------------------------------------------------- |
+| FR-K1-9 | State transitions journaled before effect (write-ahead); crash mid-apply leaves prior declared state   | ✅ MET | src/kernel/run-state.ts — `transition()` journals before `states.set()`; T-RS-2, T-RECOVER-1 (FR-K1-9 sub-test) |
+| FR-K2-6 | No managed execution without TaskContract; remaining assumptions enter as Assumption claims at 0 conf. | ✅ MET | src/kernel/task-contract.ts — `requireContract()` (fail-closed); T-TC-1..2, T-RECOVER-1 (FR-K2-6 sub-test)      |
 
 ### Functional Requirements — K-5 Agent Lifecycle
 
-| ID      | Requirement                                                                                                                 | Status | Evidence                                                                                                          |
-| ------- | --------------------------------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------- |
-| FR-K5-2 | Routing evaluates domain × level × authority; surfaces known_limitations before capability claims (INV-6)                 | ✅ MET | src/kernel/routing.ts — `route()`, `RoutingEngine`; T-ROUTE-1                                                    |
-| FR-K5-3 | Every managed spawn carries a SpawnContract; effective authority = Identity ∩ contract; can_commit defaults false; empty grants = full privacy | ✅ MET | src/kernel/spawn-contract.ts — `effectiveAuthority()` (Math.min), `enforce()`; T-AUTH-1..2, T-RECOVER-1            |
-| FR-K5-4 | SpawnContract delivered to adapter as constraints AND monitored by pre-tool hooks (contract is not a trust document)       | ✅ MET | src/kernel/spawn-contract.ts — `enforce()` journals `spawn.contract`; K-4 `pre-tool` hook (shadow-locked P1)      |
-| FR-K5-5 | ContextGrant explicit: granter, grantee, items, scope read-only/read-comment (never write), TTL, revocable, logged, reason | ✅ MET | src/kernel/context-grant.ts — `grant()`/`revoke()` journal K-1 events; T-GRANT-1..2                              |
-| FR-K5-7 | Unmanaged spawns enter Adoption Queue; NOT auto-adopted/trusted/destroyed; contents become Candidates                        | ✅ MET | src/kernel/adoption-queue.ts — `enqueue()`, `listCandidates()`, `adopt()` (manual); T-ADOPT-1                     |
+| ID      | Requirement                                                                                                                                    | Status | Evidence                                                                                                     |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------ |
+| FR-K5-2 | Routing evaluates domain × level × authority; surfaces known_limitations before capability claims (INV-6)                                      | ✅ MET | src/kernel/routing.ts — `route()`, `RoutingEngine`; T-ROUTE-1                                                |
+| FR-K5-3 | Every managed spawn carries a SpawnContract; effective authority = Identity ∩ contract; can_commit defaults false; empty grants = full privacy | ✅ MET | src/kernel/spawn-contract.ts — `effectiveAuthority()` (Math.min), `enforce()`; T-AUTH-1..2, T-RECOVER-1      |
+| FR-K5-4 | SpawnContract delivered to adapter as constraints AND monitored by pre-tool hooks (contract is not a trust document)                           | ✅ MET | src/kernel/spawn-contract.ts — `enforce()` journals `spawn.contract`; K-4 `pre-tool` hook (shadow-locked P1) |
+| FR-K5-5 | ContextGrant explicit: granter, grantee, items, scope read-only/read-comment (never write), TTL, revocable, logged, reason                     | ✅ MET | src/kernel/context-grant.ts — `grant()`/`revoke()` journal K-1 events; T-GRANT-1..2                          |
+| FR-K5-7 | Unmanaged spawns enter Adoption Queue; NOT auto-adopted/trusted/destroyed; contents become Candidates                                          | ✅ MET | src/kernel/adoption-queue.ts — `enqueue()`, `listCandidates()`, `adopt()` (manual); T-ADOPT-1                |
 
 ### Functional Requirements — S3 Execution Plane
 
-| ID      | Requirement                                                                                                                       | Status | Evidence                                                                                              |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------- |
-| FR-S3-1 | RunState event-sourced from K-1 with declared states; rebuild on crash from journal, never from dead session memory               | ✅ MET | src/kernel/run-state.ts — `reconstruct()` replays `runstate.transition`; T-RS-1..4, T-RECOVER-1       |
+| ID      | Requirement                                                                                                         | Status | Evidence                                                                                        |
+| ------- | ------------------------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------- |
+| FR-S3-1 | RunState event-sourced from K-1 with declared states; rebuild on crash from journal, never from dead session memory | ✅ MET | src/kernel/run-state.ts — `reconstruct()` replays `runstate.transition`; T-RS-1..4, T-RECOVER-1 |
 
 ### Non-Functional Requirements
 
-| ID    | Requirement                                                                 | Status | Evidence                                                                                       |
-| ----- | --------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------- |
-| NFR-5 | Recoverability: crashed governed runtime reconstructable from K-1          | ✅ MET | src/kernel/run-state.ts — `reconstruct()`; T-RS-3, T-RECOVER-1 (NFR-5 sub-test)                |
-| NFR-6 | Continuity: no silent loss of declared state across crashes                 | ✅ MET | T-RS-3, T-RECOVER-1 (NFR-6 sub-test: second adapter substitutable)                             |
-| NFR-7 | Replaceability: provider binding replaceable without kernel changes        | ✅ MET | src/kernel/adapter-spi.ts — pure boundary interface; T-RECOVER-1 (NFR-6 sub-test)            |
-| NFR-8 | Least privilege: effective authority is intersection, never union (INV-2) | ✅ MET | src/kernel/spawn-contract.ts — `effectiveAuthority()` = Math.min; T-AUTH-1                      |
-| NFR-11 | ≥90% kernel/lib coverage                                                    | ✅ MET | vitest.config.ts global thresholds; §2 coverage table (98.21% stmts / 91.77% branches)         |
+| ID     | Requirement                                                               | Status | Evidence                                                                               |
+| ------ | ------------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------- |
+| NFR-5  | Recoverability: crashed governed runtime reconstructable from K-1         | ✅ MET | src/kernel/run-state.ts — `reconstruct()`; T-RS-3, T-RECOVER-1 (NFR-5 sub-test)        |
+| NFR-6  | Continuity: no silent loss of declared state across crashes               | ✅ MET | T-RS-3, T-RECOVER-1 (NFR-6 sub-test: second adapter substitutable)                     |
+| NFR-7  | Replaceability: provider binding replaceable without kernel changes       | ✅ MET | src/kernel/adapter-spi.ts — pure boundary interface; T-RECOVER-1 (NFR-6 sub-test)      |
+| NFR-8  | Least privilege: effective authority is intersection, never union (INV-2) | ✅ MET | src/kernel/spawn-contract.ts — `effectiveAuthority()` = Math.min; T-AUTH-1             |
+| NFR-11 | ≥90% kernel/lib coverage                                                  | ✅ MET | vitest.config.ts global thresholds; §2 coverage table (98.21% stmts / 91.77% branches) |
 
 ---
 
@@ -283,23 +283,23 @@ module, test file, and verification status.
 All new modules carry `@forge-trace` records (C-04/NFR-10) and are covered by
 the NFR-11 ≥90% global threshold.
 
-| component_id            | Path                           | Implements                                                                 | @forge-trace problems | heritage     |
-| ----------------------- | ------------------------------ | -------------------------------------------------------------------------- | --------------------- | ------------ |
-| `kernel-adapter-spi`    | `src/kernel/adapter-spi.ts`    | IF-01: five-verb boundary + IF-05 Enforcement Map                          | P02                   | K03, INV-7   |
-| `kernel-run-state`      | `src/kernel/run-state.ts`      | FR-S3-1: RunState event-sourced; FR-K1-9: write-ahead                      | P95                   | K15          |
-| `kernel-spawn-contract` | `src/kernel/spawn-contract.ts` | FR-K5-3: SpawnContract + effective authority = Identity ∩ contract         | P09                   | INV-2, INV-7 |
+| component_id            | Path                           | Implements                                                               | @forge-trace problems | heritage     |
+| ----------------------- | ------------------------------ | ------------------------------------------------------------------------ | --------------------- | ------------ |
+| `kernel-adapter-spi`    | `src/kernel/adapter-spi.ts`    | IF-01: five-verb boundary + IF-05 Enforcement Map                        | P02                   | K03, INV-7   |
+| `kernel-run-state`      | `src/kernel/run-state.ts`      | FR-S3-1: RunState event-sourced; FR-K1-9: write-ahead                    | P95                   | K15          |
+| `kernel-spawn-contract` | `src/kernel/spawn-contract.ts` | FR-K5-3: SpawnContract + effective authority = Identity ∩ contract       | P09                   | INV-2, INV-7 |
 | `kernel-context-grant`  | `src/kernel/context-grant.ts`  | FR-K5-5: explicit ContextGrant, grants/revocations as K-1 events         | P09                   | INV-7        |
-| `kernel-adoption-queue` | `src/kernel/adoption-queue.ts` | FR-K5-7: unmanaged spawns enter Adoption Queue, never auto-adopted         | P09                   | INV-7        |
-| `kernel-routing`        | `src/kernel/routing.ts`        | FR-K5-2: routing evaluates domain × level × authority, limitations first  | P09                   | INV-2, INV-6 |
-| `kernel-task-contract`  | `src/kernel/task-contract.ts`  | FR-K2-6: TaskContract enforcement gate before managed execution           | P01                   | K02          |
+| `kernel-adoption-queue` | `src/kernel/adoption-queue.ts` | FR-K5-7: unmanaged spawns enter Adoption Queue, never auto-adopted       | P09                   | INV-7        |
+| `kernel-routing`        | `src/kernel/routing.ts`        | FR-K5-2: routing evaluates domain × level × authority, limitations first | P09                   | INV-2, INV-6 |
+| `kernel-task-contract`  | `src/kernel/task-contract.ts`  | FR-K2-6: TaskContract enforcement gate before managed execution          | P01                   | K02          |
 
 ### Updated existing modules
 
-| component_id            | Path                             | P2 change                                                              |
-| ----------------------- | -------------------------------- | ---------------------------------------------------------------------- |
-| `kernel-contract-store` | `src/kernel/contract-store.ts`   | Added `createSpawnContract()`, `createContextGrant()` factory methods |
-| `kernel-event-journal`  | (no source change)               | New event kinds registered via `allowedKinds` at composition time       |
-| `kernel-policy-hooks`   | (no source change)               | `pre-tool` hook used by SpawnContract enforcement (FR-K5-4)            |
+| component_id            | Path                           | P2 change                                                             |
+| ----------------------- | ------------------------------ | --------------------------------------------------------------------- |
+| `kernel-contract-store` | `src/kernel/contract-store.ts` | Added `createSpawnContract()`, `createContextGrant()` factory methods |
+| `kernel-event-journal`  | (no source change)             | New event kinds registered via `allowedKinds` at composition time     |
+| `kernel-policy-hooks`   | (no source change)             | `pre-tool` hook used by SpawnContract enforcement (FR-K5-4)           |
 
 ---
 
