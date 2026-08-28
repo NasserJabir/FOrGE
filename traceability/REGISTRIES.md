@@ -23,6 +23,7 @@ Format: `<kernel|lib|cli|plane>-<name>`
 | kernel-event-journal   | src/kernel/event-journal.ts   | P1    | K-1 append-only content-addressed event journal                    |
 | kernel-contract-store  | src/kernel/contract-store.ts  | P1    | K-2 typed Tier-A artifact store                                    |
 | kernel-policy-hooks    | src/kernel/policy-hooks.ts    | P1    | K-4 five hook points, shadow-locked                                |
+| kernel-adapter-spi     | src/kernel/adapter-spi.ts     | P2    | K-3 Adapter SPI (BP-1): five verbs + Enforcement Map (IF-01/IF-05) |
 | kernel-agent-registry  | src/kernel/agent-registry.ts  | P1    | K-5 durable AgentIdentity records (structure)                      |
 | kernel-trust-label     | src/kernel/trust-label.ts     | P1    | Trust label computation (weakest-of) — DEC-42.1                    |
 | kernel-storage-port    | src/kernel/storage-port.ts    | P1    | Storage abstraction (better-sqlite3 behind port)                   |
