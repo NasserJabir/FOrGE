@@ -77,7 +77,10 @@ export class AgentRegistry {
   register(raw: unknown): { ok: true; identity: AgentIdentity } | { ok: false; errors: string[] } {
     const parsed = AgentIdentitySchema.safeParse(raw);
     if (!parsed.success) {
-      return { ok: false, errors: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`) };
+      return {
+        ok: false,
+        errors: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`),
+      };
     }
     const id = parsed.data.identityId;
     if (this.byId.has(id)) {
@@ -103,7 +106,10 @@ export class AgentRegistry {
   validate(raw: unknown): { ok: true } | { ok: false; errors: string[] } {
     const parsed = AgentIdentitySchema.safeParse(raw);
     if (!parsed.success) {
-      return { ok: false, errors: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`) };
+      return {
+        ok: false,
+        errors: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`),
+      };
     }
     return { ok: true };
   }

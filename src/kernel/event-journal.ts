@@ -14,10 +14,12 @@
  *
  * @forge-trace {"component_id":"kernel-event-journal","problems":["P74","P08","P93","P78","P83","P98"],"heritage":["K01","K05","R4"],"decisions":["DEC-01","DEC-22","DEC-25","DEC-27"],"bp_ids":[],"ac_ids":[]}
  */
-import { canonicalJson } from './canonical-json.js';
 import { sha256Hex } from '../lib/hash.js';
-import { ulid } from '../lib/ulid.js';
 import { scanForSecrets } from '../lib/secret-patterns.js';
+import { ulid } from '../lib/ulid.js';
+
+import { canonicalJson } from './canonical-json.js';
+
 import type { InsertResult, JournalStorage, StoredEventRow } from './storage-port.js';
 
 /** Genesis prev_hash marker (FR-K1-2). */
@@ -176,9 +178,29 @@ export class EventJournal {
    * Reports {ok, checked, firstBroken{eventId, reason}}.
    */
   verify(fromId?: string): VerifyResult {
-    const rows = this.storage.range(fromId ?? null, null);
+    // When fromId is provided AND found, it serves as the trusted anchor:
+    // we verify everything AFTER it (skip the anchor row, set expectedPrev
+    // to its hash). When fromId is not found (or not provided), we verify
+    // from the beginning with expectedPrev = GENESIS.
+    let rows: StoredEventRow[];
+    let expectedPrev: string | null;
+    if (fromId) {
+      const anchor = this.storage.getById(fromId);
+      if (anchor) {
+        // Anchor found: skip it, verify everything after.
+        const allRows = this.storage.range(fromId, null);
+        rows = allRows.slice(1);
+        expectedPrev = anchor.hash;
+      } else {
+        // Anchor not found: verify from the beginning.
+        rows = this.storage.range(null, null);
+        expectedPrev = null;
+      }
+    } else {
+      rows = this.storage.range(null, null);
+      expectedPrev = null;
+    }
     let checked = 0;
-    let expectedPrev = fromId ? this.storage.getById(fromId)?.hash ?? null : null;
 
     for (const row of rows) {
       // Reconstruct event minus hash from body.

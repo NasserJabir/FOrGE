@@ -20,8 +20,10 @@
  * @forge-trace {"component_id":"kernel-contract-store","problems":["P01","P04","P14","P16","P22","P90"],"heritage":["K02","K04","K05","K07","K08","INV-4"],"decisions":["DEC-01","DEC-22"],"bp_ids":[],"ac_ids":["AC-P01"]}
  */
 import { z } from 'zod';
+
 import { sha256Hex } from '../lib/hash.js';
 import { ulid } from '../lib/ulid.js';
+
 import { canonicalJson } from './canonical-json.js';
 import { weakestOf, type TrustLabel } from './trust-label.js';
 
@@ -102,9 +104,7 @@ export interface Artifact {
 }
 
 /** Validation result. */
-export type ValidationResult =
-  | { ok: true; artifact: Artifact }
-  | { ok: false; errors: string[] };
+export type ValidationResult = { ok: true; artifact: Artifact } | { ok: false; errors: string[] };
 
 /** A supersession request. */
 export interface SupersedeRequest {
@@ -142,7 +142,10 @@ export class ContractStore {
     // FR-K2-3: strict schema parse rejects unknown keys.
     const parsed = FrontmatterSchema.safeParse(fmRaw);
     if (!parsed.success) {
-      return { ok: false, errors: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`) };
+      return {
+        ok: false,
+        errors: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`),
+      };
     }
     const fm = parsed.data;
 
@@ -207,7 +210,8 @@ export class ContractStore {
     // Move old to deprecated tree with tombstone.
     const tombstoned: Artifact = {
       frontmatter: { ...old.frontmatter, lifecycleState: 'superseded' },
-      body: old.body + `\n\n---\n**SUPERSEDED** by \`${req.newArtifactId}\` — reason: ${req.reason}\n`,
+      body:
+        old.body + `\n\n---\n**SUPERSEDED** by \`${req.newArtifactId}\` — reason: ${req.reason}\n`,
     };
     this.deprecated.set(req.oldArtifactId, tombstoned);
     this.byId.delete(req.oldArtifactId);

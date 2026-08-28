@@ -19,10 +19,11 @@
  *
  * @forge-trace {"component_id":"test-env-environment","problems":["P89","P74","P08","P30"],"heritage":["K01","R1","R4"],"decisions":["DEC-12","DEC-22","DEC-41"],"bp_ids":[],"ac_ids":[]}
  */
-import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { describe, it, expect } from 'vitest';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');
@@ -376,12 +377,7 @@ describe('kernel modules are importable', () => {
     // AUTHORITY_CLASSES is a readonly `as const` tuple; spread into a mutable
     // array before deep-equal comparison (exactOptionalPropertyTypes / readonly
     // tuple vs mutable array mismatch otherwise).
-    expect([...mod.AUTHORITY_CLASSES]).toEqual([
-      'OBSERVER',
-      'EXECUTOR',
-      'COMMITTER',
-      'APPROVER',
-    ]);
+    expect([...mod.AUTHORITY_CLASSES]).toEqual(['OBSERVER', 'EXECUTOR', 'COMMITTER', 'APPROVER']);
   });
 
   it('lib helpers import and are callable', async () => {
@@ -402,13 +398,13 @@ describe('kernel modules are importable', () => {
 // vitest coverage config targets kernel/lib (NFR-11)
 // ---------------------------------------------------------------------------
 describe('NFR-11: coverage configuration', () => {
-  it('vitest.config.ts includes src/kernel and src/lib for coverage', async () => {
+  it('vitest.config.ts includes src/kernel and src/lib for coverage', () => {
     const text = readRoot('vitest.config.ts');
     expect(text).toContain('src/kernel/**');
     expect(text).toContain('src/lib/**');
   });
 
-  it('vitest.config.ts excludes src/cli and src/planes from coverage', async () => {
+  it('vitest.config.ts excludes src/cli and src/planes from coverage', () => {
     const text = readRoot('vitest.config.ts');
     expect(text).toContain('src/cli/**');
     expect(text).toContain('src/planes/**');

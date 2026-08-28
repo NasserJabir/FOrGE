@@ -18,6 +18,7 @@
  *   npm run cli -- <command> [options]
  */
 import { Command } from 'commander';
+
 import {
   cmdInit,
   cmdJournalAppend,
@@ -49,8 +50,53 @@ program
 
 // Helper: resolve --root from the parent program options.
 function rootOf(cmd: Command): string | undefined {
-  const opts = cmd.parent?.opts() ?? {};
-  return typeof opts.root === 'string' ? opts.root : undefined;
+  const opts: Record<string, unknown> | undefined = cmd.parent?.opts();
+  const root = opts?.root;
+  return typeof root === 'string' ? root : undefined;
+}
+
+// --- Typed option interfaces for each command (Commander opts is `any`) ---
+interface JournalAppendOpts {
+  actor: string;
+  kind: string;
+  payload: string;
+  taskRef: string | undefined;
+}
+interface JournalVerifyOpts {
+  fromId: string | undefined;
+}
+interface JournalReplayOpts {
+  fromId: string | undefined;
+  toId: string | undefined;
+}
+interface FileOpts {
+  file: string;
+}
+interface ContractListOpts {
+  type: string | undefined;
+}
+interface ContractHistoryOpts {
+  artifactId: string;
+}
+interface ContractSupersedeOpts {
+  oldId: string;
+  newId: string;
+  reason: string;
+}
+interface HooksRunOpts {
+  hookPoint: string;
+  actionClass: string;
+  payload: string;
+  labels: string | undefined;
+}
+interface DecisionRecordOpts {
+  context: string;
+  chosenOption: string;
+  rejectedAlternative: string;
+  rejectionReason: string;
+  approver: string;
+  evidenceRefs: string | undefined;
+  scope: string | undefined;
 }
 
 // --- init ---
@@ -72,7 +118,7 @@ journal
   .requiredOption('-k, --kind <domain.action>', 'event kind (namespaced)')
   .requiredOption('-p, --payload <json>', 'event payload as JSON')
   .option('-t, --task-ref <ref>', 'task reference id')
-  .action((opts) => {
+  .action((opts: JournalAppendOpts) => {
     exit(
       cmdJournalAppend({
         root: rootOf(program),
@@ -88,7 +134,7 @@ journal
   .command('verify')
   .description('verify the K-1 chain integrity (FR-K1-5 / NFR-1)')
   .option('-f, --from-id <id>', 'verify starting from this event id')
-  .action((opts) => {
+  .action((opts: JournalVerifyOpts) => {
     exit(cmdJournalVerify({ root: rootOf(program), fromId: opts.fromId }));
   });
 
@@ -97,7 +143,7 @@ journal
   .description('replay (fold over) a range of events (FR-K1-6)')
   .option('-f, --from-id <id>', 'start event id (inclusive)')
   .option('-t, --to-id <id>', 'end event id (inclusive)')
-  .action((opts) => {
+  .action((opts: JournalReplayOpts) => {
     exit(
       cmdJournalReplay({
         root: rootOf(program),
@@ -114,7 +160,7 @@ contract
   .command('create')
   .description('create and store a Tier-A artifact from a JSON file')
   .requiredOption('-f, --file <path>', 'artifact JSON file (frontmatter + body)')
-  .action((opts) => {
+  .action((opts: FileOpts) => {
     exit(cmdContractCreate({ root: rootOf(program), file: opts.file }));
   });
 
@@ -122,7 +168,7 @@ contract
   .command('validate')
   .description('validate an artifact without storing (FR-K2-3)')
   .requiredOption('-f, --file <path>', 'artifact JSON file')
-  .action((opts) => {
+  .action((opts: FileOpts) => {
     exit(cmdContractValidate({ root: rootOf(program), file: opts.file }));
   });
 
@@ -130,7 +176,7 @@ contract
   .command('list')
   .description('list stored artifacts, optionally filtered by type')
   .option('-t, --type <type>', 'artifact type filter')
-  .action((opts) => {
+  .action((opts: ContractListOpts) => {
     exit(cmdContractList({ root: rootOf(program), type: opts.type }));
   });
 
@@ -138,7 +184,7 @@ contract
   .command('history')
   .description('show the supersession chain for an artifact (FR-K2-4)')
   .requiredOption('-i, --artifact-id <id>', 'artifact id')
-  .action((opts) => {
+  .action((opts: ContractHistoryOpts) => {
     exit(cmdContractHistory({ root: rootOf(program), artifactId: opts.artifactId }));
   });
 
@@ -148,7 +194,7 @@ contract
   .requiredOption('--old-id <id>', 'old artifact id')
   .requiredOption('--new-id <id>', 'new (successor) artifact id')
   .requiredOption('--reason <text>', 'supersession reason (required)')
-  .action((opts) => {
+  .action((opts: ContractSupersedeOpts) => {
     exit(
       cmdContractSupersede({
         root: rootOf(program),
@@ -166,7 +212,7 @@ policy
   .command('load')
   .description('load policy rules from a JSON array file (FR-K4-2 / C-11)')
   .requiredOption('-f, --file <path>', 'policy rules JSON array file')
-  .action((opts) => {
+  .action((opts: FileOpts) => {
     exit(cmdPolicyLoad({ root: rootOf(program), file: opts.file }));
   });
 
@@ -176,11 +222,14 @@ const hooks = program.command('hooks').description('K-4 hook evaluation operatio
 hooks
   .command('run')
   .description('evaluate a hook point (shadow mode in P1, FR-K4-3)')
-  .requiredOption('-p, --hook-point <point>', 'hook point (pre-send|pre-tool|post-result|pre-commit|periodic-tick)')
+  .requiredOption(
+    '-p, --hook-point <point>',
+    'hook point (pre-send|pre-tool|post-result|pre-commit|periodic-tick)',
+  )
   .requiredOption('-c, --action-class <class>', 'action class')
   .requiredOption('--payload <json>', 'payload as JSON')
   .option('-l, --labels <csv>', 'comma-separated labels')
-  .action((opts) => {
+  .action((opts: HooksRunOpts) => {
     exit(
       cmdHooksRun({
         root: rootOf(program),
@@ -199,7 +248,7 @@ identity
   .command('create')
   .description('register an AgentIdentity from a JSON file (FR-K5-1)')
   .requiredOption('-f, --file <path>', 'identity JSON file')
-  .action((opts) => {
+  .action((opts: FileOpts) => {
     exit(cmdIdentityCreate({ root: rootOf(program), file: opts.file }));
   });
 
@@ -214,7 +263,7 @@ identity
   .command('validate')
   .description('validate an identity record without storing (FR-K5-1)')
   .requiredOption('-f, --file <path>', 'identity JSON file')
-  .action((opts) => {
+  .action((opts: FileOpts) => {
     exit(cmdIdentityValidate({ root: rootOf(program), file: opts.file }));
   });
 
@@ -251,7 +300,7 @@ program
   .requiredOption('--approver <id>', 'approver identity')
   .option('--evidence-refs <json>', 'evidence refs as JSON array')
   .option('--scope <scope>', 'scope (default: project)')
-  .action((opts) => {
+  .action((opts: DecisionRecordOpts) => {
     exit(
       cmdDecisionRecord({
         root: rootOf(program),

@@ -23,16 +23,12 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import { join, resolve, relative, dirname } from 'node:path';
 
-import { EventJournal } from '../kernel/event-journal.js';
-import { MemoryJournalStorage } from '../kernel/storage-memory.js';
-import { ContractStore } from '../kernel/contract-store.js';
-import {
-  PolicyHookRunner,
-  HOOK_POINTS,
-  type HookContext,
-} from '../kernel/policy-hooks.js';
 import { AgentRegistry } from '../kernel/agent-registry.js';
 import { canonicalJson } from '../kernel/canonical-json.js';
+import { ContractStore } from '../kernel/contract-store.js';
+import { EventJournal } from '../kernel/event-journal.js';
+import { PolicyHookRunner, HOOK_POINTS, type HookContext } from '../kernel/policy-hooks.js';
+import { MemoryJournalStorage } from '../kernel/storage-memory.js';
 import { sha256Hex } from '../lib/hash.js';
 import { ulid } from '../lib/ulid.js';
 
@@ -99,15 +95,15 @@ function loadJournalStorage(journalPath: string): MemoryJournalStorage {
       const row = JSON.parse(line) as Record<string, unknown>;
       // Re-insert each row; storage is idempotent by event_id.
       storage.insert({
-        event_id: String(row.event_id ?? ''),
-        ts: String(row.ts ?? ''),
-        actor: String(row.actor ?? ''),
-        task_ref: row.task_ref === null ? null : String(row.task_ref ?? ''),
-        kind: String(row.kind ?? ''),
-        payload_hash: String(row.payload_hash ?? ''),
-        prev_hash: String(row.prev_hash ?? ''),
-        hash: String(row.hash ?? ''),
-        body: String(row.body ?? ''),
+        event_id: strField(row.event_id),
+        ts: strField(row.ts),
+        actor: strField(row.actor),
+        task_ref: row.task_ref === null ? null : strField(row.task_ref),
+        kind: strField(row.kind),
+        payload_hash: strField(row.payload_hash),
+        prev_hash: strField(row.prev_hash),
+        hash: strField(row.hash),
+        body: strField(row.body),
       });
     } catch {
       // Skip malformed lines — but the journal verify will catch tampering.
@@ -166,6 +162,17 @@ function err(msg: string): void {
   process.stderr.write(msg + '\n');
 }
 
+/**
+ * Safely coerce an unknown JSON value to a string for journal row fields.
+ * Avoids no-base-to-string: only stringifies primitives (string/number/boolean);
+ * objects/arrays fall back to '' (the journal verify will catch tampering).
+ */
+function strField(v: unknown): string {
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  return '';
+}
+
 function readJsonFile(path: string): unknown {
   const text = readFileSync(path, 'utf8');
   return JSON.parse(text);
@@ -174,9 +181,10 @@ function readJsonFile(path: string): unknown {
 /**
  * Parse a JSON string from a CLI argument. Returns {ok, value} or {ok:false, error}.
  */
-function parseJsonArg(arg: string, label: string):
-  | { ok: true; value: unknown }
-  | { ok: false; error: string } {
+function parseJsonArg(
+  arg: string,
+  label: string,
+): { ok: true; value: unknown } | { ok: false; error: string } {
   try {
     return { ok: true, value: JSON.parse(arg) };
   } catch {
@@ -215,7 +223,7 @@ export function cmdJournalAppend(opts: {
   actor: string;
   kind: string;
   payload: string;
-  taskRef?: string;
+  taskRef: string | undefined;
 }): ExitCode {
   const ctx = loadContext(opts.root);
   const payloadParsed = parseJsonArg(opts.payload, 'payload');
@@ -253,14 +261,19 @@ export function cmdJournalAppend(opts: {
 // ===========================================================================
 // journal verify — verify the K-1 chain integrity (FR-K1-5 / NFR-1)
 // ===========================================================================
-export function cmdJournalVerify(opts: { root: string | undefined; fromId?: string }): ExitCode {
+export function cmdJournalVerify(opts: {
+  root: string | undefined;
+  fromId: string | undefined;
+}): ExitCode {
   const ctx = loadContext(opts.root);
   const result = ctx.journal.verify(opts.fromId);
   if (result.ok) {
     out(`OK: ${result.checked} event(s) verified, chain intact.`);
     return EXIT_SUCCESS;
   }
-  err(`BROKEN: ${result.checked} event(s) checked, first broken at ${result.firstBroken?.eventId ?? '?'}`);
+  err(
+    `BROKEN: ${result.checked} event(s) checked, first broken at ${result.firstBroken?.eventId ?? '?'}`,
+  );
   err(`  reason: ${result.firstBroken?.reason ?? 'unknown'}`);
   return EXIT_ERROR;
 }
@@ -270,8 +283,8 @@ export function cmdJournalVerify(opts: { root: string | undefined; fromId?: stri
 // ===========================================================================
 export function cmdJournalReplay(opts: {
   root: string | undefined;
-  fromId?: string;
-  toId?: string;
+  fromId: string | undefined;
+  toId: string | undefined;
 }): ExitCode {
   const ctx = loadContext(opts.root);
   const events = ctx.journal.replay(
@@ -334,7 +347,10 @@ export function cmdContractValidate(opts: { root: string | undefined; file: stri
 // ===========================================================================
 // contract list — list stored artifacts, optionally filtered by type
 // ===========================================================================
-export function cmdContractList(opts: { root: string | undefined; type?: string }): ExitCode {
+export function cmdContractList(opts: {
+  root: string | undefined;
+  type: string | undefined;
+}): ExitCode {
   const ctx = loadContext(opts.root);
   const list = opts.type ? ctx.contracts.listByType(opts.type as never) : ctx.contracts.list();
   for (const art of list) {
@@ -349,7 +365,10 @@ export function cmdContractList(opts: { root: string | undefined; type?: string 
 // ===========================================================================
 // contract history — show the supersession chain for an artifact (FR-K2-4)
 // ===========================================================================
-export function cmdContractHistory(opts: { root: string | undefined; artifactId: string }): ExitCode {
+export function cmdContractHistory(opts: {
+  root: string | undefined;
+  artifactId: string;
+}): ExitCode {
   const ctx = loadContext(opts.root);
   const chain = ctx.contracts.historyOf(opts.artifactId);
   if (chain.length === 0) {
@@ -417,7 +436,7 @@ export function cmdHooksRun(opts: {
   hookPoint: string;
   actionClass: string;
   payload: string;
-  labels?: string;
+  labels: string | undefined;
 }): ExitCode {
   const ctx = loadContext(opts.root);
   if (!HOOK_POINTS.includes(opts.hookPoint as never)) {
@@ -490,7 +509,7 @@ export function cmdIdentityValidate(opts: { root: string | undefined; file: stri
     raw = readJsonFile(opts.file);
   } catch (e) {
     err(`cannot read identity file: ${e instanceof Error ? e.message : String(e)}`);
-      return EXIT_ERROR;
+    return EXIT_ERROR;
   }
   const res = ctx.registry.validate(raw);
   if (!res.ok) {
@@ -630,11 +649,12 @@ export function cmdDecisionRecord(opts: {
   rejectedAlternative: string;
   rejectionReason: string;
   approver: string;
-  evidenceRefs?: string;
-  scope?: string;
+  evidenceRefs: string | undefined;
+  scope: string | undefined;
 }): ExitCode {
   const ctx = loadContext(opts.root);
-  let evidenceRefs: { kind: string; locator: string; version_hash?: string; pinned_at?: string }[] = [];
+  let evidenceRefs: { kind: string; locator: string; version_hash?: string; pinned_at?: string }[] =
+    [];
   if (opts.evidenceRefs) {
     const parsed = parseJsonArg(opts.evidenceRefs, 'evidenceRefs');
     if (!parsed.ok) {
@@ -663,7 +683,9 @@ export function cmdDecisionRecord(opts: {
     evidenceRefs,
     approver: opts.approver,
   };
-  if (opts.scope !== undefined) drInput.scope = opts.scope;
+  if (opts.scope !== undefined) {
+    drInput.scope = opts.scope;
+  }
   const dr = ctx.contracts.createDecisionRecord(drInput);
   out(`Created DecisionRecord: ${dr.frontmatter.artifactId}`);
   return EXIT_SUCCESS;

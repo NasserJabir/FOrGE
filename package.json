@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint .",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "test": "vitest run",

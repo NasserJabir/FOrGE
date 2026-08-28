@@ -17,7 +17,7 @@ const TIME_LEN = 10;
 const RANDOM_LEN = 16;
 
 let lastTimeMs = 0;
-let lastRandomPart: number[] = new Array(RANDOM_LEN).fill(0);
+let lastRandomPart: number[] = Array.from({ length: RANDOM_LEN }, () => 0);
 
 /**
  * Generate a monotonic, lexicographically-sortable ULID string (26 chars).

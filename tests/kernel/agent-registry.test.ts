@@ -4,7 +4,13 @@
  * @forge-trace {"component_id":"test-agent-registry","problems":["P09","P90"],"heritage":["K05","INV-2","INV-6"],"decisions":["DEC-02","DEC-03"],"bp_ids":[],"ac_ids":[]}
  */
 import { describe, it, expect } from 'vitest';
-import { AgentRegistry, AUTHORITY_CLASSES, CAPABILITY_LEVELS } from '../../src/kernel/agent-registry.js';
+
+import {
+  AgentRegistry,
+  AUTHORITY_CLASSES,
+  CAPABILITY_LEVELS,
+} from '../../src/kernel/agent-registry.js';
+
 import type { AgentIdentity } from '../../src/kernel/agent-registry.js';
 
 function makeIdentity(over: Partial<AgentIdentity> = {}): AgentIdentity {
@@ -13,7 +19,9 @@ function makeIdentity(over: Partial<AgentIdentity> = {}): AgentIdentity {
     privateMemoryNs: 'agent-1/private',
     privateSkills: [],
     experienceLedger: [],
-    capabilityMatrix: [{ domain: 'typescript', level: 'L3', certifiedBy: ['owner'], expires: '2027-01-01' }],
+    capabilityMatrix: [
+      { domain: 'typescript', level: 'L3', certifiedBy: ['owner'], expires: '2027-01-01' },
+    ],
     knownLimitations: ['cannot access network'],
     authorityClass: 'EXECUTOR',
     evolutionBoundary: { mayLearnIn: ['project'], mayTouchShared: false, maySpawnAgents: false },
@@ -76,5 +84,60 @@ describe('FR-K5-1: AgentIdentity structure', () => {
     r.register(makeIdentity({ identityId: 'lim', knownLimitations: ['no network', 'no shell'] }));
     const id = r.get('lim')!;
     expect(id.knownLimitations).toEqual(['no network', 'no shell']);
+  });
+});
+
+describe('FR-K5-1: validate (validate without storing)', () => {
+  it('validate returns {ok:true} for a valid identity', () => {
+    const r = new AgentRegistry();
+    const res = r.validate(makeIdentity());
+    expect(res.ok).toBe(true);
+  });
+
+  it('validate does NOT store the identity', () => {
+    const r = new AgentRegistry();
+    r.validate(makeIdentity({ identityId: 'v1' }));
+    expect(r.get('v1')).toBeNull();
+    expect(r.list().length).toBe(0);
+  });
+
+  it('PROVOCATION: validate returns {ok:false, errors} for an invalid authority class', () => {
+    const r = new AgentRegistry();
+    const res = r.validate(makeIdentity({ authorityClass: 'SUPERUSER' as never }));
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.errors.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('PROVOCATION: validate returns {ok:false, errors} for unknown keys', () => {
+    const r = new AgentRegistry();
+    const res = r.validate({ ...makeIdentity(), backdoor: 'evil' });
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.errors.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('PROVOCATION: validate returns {ok:false, errors} for a missing required field', () => {
+    const r = new AgentRegistry();
+    const incomplete = {
+      ...makeIdentity(),
+      privateMemoryNs: undefined,
+    } as unknown as AgentIdentity;
+    const res = r.validate(incomplete);
+    expect(res.ok).toBe(false);
+  });
+});
+
+describe('AgentRegistry: get + list edge cases', () => {
+  it('get returns null for a missing identity', () => {
+    const r = new AgentRegistry();
+    expect(r.get('nope')).toBeNull();
+  });
+
+  it('list returns an empty array when nothing is registered', () => {
+    const r = new AgentRegistry();
+    expect(r.list()).toEqual([]);
   });
 });

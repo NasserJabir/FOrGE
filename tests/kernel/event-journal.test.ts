@@ -7,11 +7,13 @@
  *
  * @forge-trace {"component_id":"test-event-journal","problems":["P74","P08","P93","P78","P83","P98"],"heritage":["K01","K05","R4"],"decisions":["DEC-01","DEC-25","DEC-27"],"bp_ids":[],"ac_ids":[]}
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
+
+import { canonicalJson } from '../../src/kernel/canonical-json.js';
 import { EventJournal, GENESIS_PREV_HASH } from '../../src/kernel/event-journal.js';
 import { MemoryJournalStorage } from '../../src/kernel/storage-memory.js';
 import { sha256Hex } from '../../src/lib/hash.js';
-import { canonicalJson } from '../../src/kernel/canonical-json.js';
+
 import type { JournalEvent } from '../../src/kernel/event-journal.js';
 
 function makeJournal(): EventJournal {
@@ -144,7 +146,12 @@ describe('FR-K1-5 / NFR-1: verify detects tampering with exact firstBroken', () 
     body.prev_hash = 'INVALID_HASH';
     const tamperedBody = canonicalJson(body);
     const tamperedHash = sha256Hex(tamperedBody);
-    const tamperedRow = { ...row2, body: tamperedBody, hash: tamperedHash, prev_hash: 'INVALID_HASH' };
+    const tamperedRow = {
+      ...row2,
+      body: tamperedBody,
+      hash: tamperedHash,
+      prev_hash: 'INVALID_HASH',
+    };
     const tamperedStorage = new MemoryJournalStorage();
     tamperedStorage.insert(rows[0]!);
     tamperedStorage.insert(tamperedRow);
@@ -202,7 +209,11 @@ describe('FR-K1-7: secret rejection BEFORE persistence (PROVOCATION)', () => {
 
   it('PROVOCATION: a journal.append_rejected event IS journaled for the rejection', () => {
     const j = makeJournal();
-    j.append({ actor: 'a', kind: 'task.note', payload: { k: 'ghp_1234567890abcdefghijklmnopqrstuvwxyzAB' } });
+    j.append({
+      actor: 'a',
+      kind: 'task.note',
+      payload: { k: 'ghp_1234567890abcdefghijklmnopqrstuvwxyzAB' },
+    });
     const rejections = j.all().filter((e) => e.kind === 'journal.append_rejected');
     expect(rejections.length).toBe(1);
   });
@@ -219,7 +230,11 @@ describe('FR-K1-7: secret rejection BEFORE persistence (PROVOCATION)', () => {
 
   it('clean payloads are accepted normally', () => {
     const j = makeJournal();
-    const res = j.append({ actor: 'a', kind: 'task.note', payload: { note: 'just a normal note' } });
+    const res = j.append({
+      actor: 'a',
+      kind: 'task.note',
+      payload: { note: 'just a normal note' },
+    });
     expect(res.kind).toBe('appended');
   });
 });
@@ -259,5 +274,129 @@ describe('FR-K1-9: write-ahead (state transitions journaled before effect)', () 
     if (res.kind === 'appended') {
       expect(res.event.event_id).toBeTruthy();
     }
+  });
+});
+
+describe('EventJournal: get / all / count / close accessors', () => {
+  it('get returns an event by id', () => {
+    const j = makeJournal();
+    const res = j.append({ actor: 'a', kind: 'task.note', payload: { x: 1 } });
+    if (res.kind !== 'appended') throw new Error('expected appended');
+    const got = j.get(res.event.event_id);
+    expect(got).not.toBeNull();
+    expect(got!.event_id).toBe(res.event.event_id);
+    expect(got!.actor).toBe('a');
+  });
+
+  it('get returns null for a missing id', () => {
+    const j = makeJournal();
+    expect(j.get('nonexistent')).toBeNull();
+  });
+
+  it('all returns events in chronological order', () => {
+    const j = makeJournal();
+    j.append({ actor: 'a', kind: 'task.note', payload: { n: 1 } });
+    j.append({ actor: 'b', kind: 'task.note', payload: { n: 2 } });
+    j.append({ actor: 'c', kind: 'task.note', payload: { n: 3 } });
+    const events = j.all();
+    expect(events.length).toBe(3);
+    expect(events[0]!.actor).toBe('a');
+    expect(events[1]!.actor).toBe('b');
+    expect(events[2]!.actor).toBe('c');
+  });
+
+  it('all returns an empty array on a fresh journal', () => {
+    const j = makeJournal();
+    expect(j.all()).toEqual([]);
+  });
+
+  it('count returns the number of events', () => {
+    const j = makeJournal();
+    expect(j.count()).toBe(0);
+    j.append({ actor: 'a', kind: 'task.note', payload: {} });
+    j.append({ actor: 'a', kind: 'task.note', payload: {} });
+    expect(j.count()).toBe(2);
+  });
+
+  it('count includes rejection events', () => {
+    const j = makeJournal();
+    // This append is rejected (secret) and journals a rejection event.
+    j.append({ actor: 'a', kind: 'task.note', payload: { k: 'AKIAIOSFODNN7EXAMPLE' } });
+    expect(j.count()).toBe(1); // the journal.append_rejected event
+  });
+
+  it('close releases the underlying storage (subsequent count is 0)', () => {
+    const storage = new MemoryJournalStorage();
+    const j = new EventJournal({ storage });
+    j.append({ actor: 'a', kind: 'task.note', payload: { x: 1 } });
+    expect(j.count()).toBe(1);
+    j.close();
+    // After close, the in-memory storage is cleared.
+    expect(storage.count()).toBe(0);
+  });
+
+  it('close is idempotent (calling twice does not throw)', () => {
+    const j = makeJournal();
+    j.append({ actor: 'a', kind: 'task.note', payload: {} });
+    j.close();
+    expect(() => j.close()).not.toThrow();
+  });
+});
+
+describe('FR-K1-8: allowUnknownKinds option', () => {
+  it('allowUnknownKinds accepts non-namespaced kinds', () => {
+    const j = new EventJournal({
+      storage: new MemoryJournalStorage(),
+      allowUnknownKinds: true,
+    });
+    // With allowUnknownKinds, even free-form kinds are accepted.
+    expect(j.append({ actor: 'a', kind: 'random', payload: {} }).kind).toBe('appended');
+    expect(j.append({ actor: 'a', kind: 'notnamespaced', payload: {} }).kind).toBe('appended');
+    expect(j.append({ actor: 'a', kind: 'TASK.Started', payload: {} }).kind).toBe('appended');
+  });
+
+  it('allowUnknownKinds accepts namespaced kinds too', () => {
+    const j = new EventJournal({
+      storage: new MemoryJournalStorage(),
+      allowUnknownKinds: true,
+    });
+    expect(j.append({ actor: 'a', kind: 'task.started', payload: {} }).kind).toBe('appended');
+  });
+
+  it('allowUnknownKinds with an explicit allowedKinds still allows unknown kinds', () => {
+    const j = new EventJournal({
+      storage: new MemoryJournalStorage(),
+      allowedKinds: ['task.started'],
+      allowUnknownKinds: true,
+    });
+    // allowUnknownKinds short-circuits to true, so even kinds not in the list pass.
+    expect(j.append({ actor: 'a', kind: 'random', payload: {} }).kind).toBe('appended');
+  });
+});
+
+describe('EventJournal: verify with fromId', () => {
+  it('verify from a specific event id checks only that sub-range', () => {
+    const j = makeJournal();
+    j.append({ actor: 'a', kind: 'task.note', payload: { n: 1 } });
+    const r2 = j.append({ actor: 'a', kind: 'task.note', payload: { n: 2 } });
+    j.append({ actor: 'a', kind: 'task.note', payload: { n: 3 } });
+    if (r2.kind !== 'appended') throw new Error('expected appended');
+    // verify(fromId) treats fromId as the trusted anchor: it skips the anchor
+    // row and verifies everything AFTER it, using the anchor's hash as
+    // expectedPrev. Here fromId=e2, so only e3 is checked (1 event).
+    const v = j.verify(r2.event.event_id);
+    expect(v.ok).toBe(true);
+    expect(v.checked).toBe(1); // only event 3 (after the e2 anchor)
+  });
+
+  it('verify from a missing id checks from the start', () => {
+    const j = makeJournal();
+    j.append({ actor: 'a', kind: 'task.note', payload: { n: 1 } });
+    j.append({ actor: 'a', kind: 'task.note', payload: { n: 2 } });
+    // fromId not found => expectedPrev is null => starts from GENESIS.
+    const v = j.verify('missing-id');
+    // The first event's prev_hash is GENESIS, so it still passes.
+    expect(v.ok).toBe(true);
+    expect(v.checked).toBe(2);
   });
 });
