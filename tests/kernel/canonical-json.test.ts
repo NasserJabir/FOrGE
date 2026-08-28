@@ -4,6 +4,7 @@
  * @forge-trace {"component_id":"test-canonical-json","problems":["P74","P08"],"heritage":["K05"],"decisions":["DEC-01"],"bp_ids":[],"ac_ids":[]}
  */
 import { describe, it, expect } from 'vitest';
+
 import { canonicalJson } from '../../src/kernel/canonical-json.js';
 
 describe('canonicalJson — golden fixture (FR-K1-3)', () => {
@@ -110,5 +111,18 @@ describe('canonicalJson — edge cases', () => {
     expect(canonicalJson(NaN)).toBe('null');
     expect(canonicalJson(Infinity)).toBe('null');
     expect(canonicalJson(-Infinity)).toBe('null');
+  });
+  it('functions encoded as null (fallback branch, line 53)', () => {
+    expect(canonicalJson(() => 42)).toBe('null');
+  });
+  it('symbols encoded as null (fallback branch, line 53)', () => {
+    expect(canonicalJson(Symbol('x'))).toBe('null');
+  });
+  it('bigint encoded as null (fallback branch, line 53)', () => {
+    expect(canonicalJson(123n)).toBe('null');
+  });
+  it('function value inside an object is omitted via fallback to null', () => {
+    // A function as a property value hits the fallback branch (return 'null').
+    expect(canonicalJson({ a: 1, fn: () => 0 })).toBe('{"a":1,"fn":null}');
   });
 });

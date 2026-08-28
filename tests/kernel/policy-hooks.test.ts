@@ -6,9 +6,11 @@
  * @forge-trace {"component_id":"test-policy-hooks","problems":["P10","P09","P83","P92","P13","P30"],"heritage":["E02"],"decisions":["DEC-01","DEC-30","DEC-35"],"bp_ids":[],"ac_ids":[]}
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { PolicyHookRunner, HOOK_POINTS } from '../../src/kernel/policy-hooks.js';
+
 import { EventJournal } from '../../src/kernel/event-journal.js';
+import { PolicyHookRunner, HOOK_POINTS } from '../../src/kernel/policy-hooks.js';
 import { MemoryJournalStorage } from '../../src/kernel/storage-memory.js';
+
 import type { PolicyRule } from '../../src/kernel/policy-hooks.js';
 
 function makeRunner(): { runner: PolicyHookRunner; journal: EventJournal } {
@@ -63,7 +65,14 @@ describe('FR-K4-2: K-4 contains no rule logic; rules load from data', () => {
   it('PROVOCATION: rejects malformed policy rules (strict schema)', () => {
     const { runner } = makeRunner();
     const res = runner.loadRules([
-      { ruleId: 'r1', hookPoint: 'invalid-hook', actionClass: 'x', effect: 'deny', failPosture: 'fail-closed', conditions: [] },
+      {
+        ruleId: 'r1',
+        hookPoint: 'invalid-hook',
+        actionClass: 'x',
+        effect: 'deny',
+        failPosture: 'fail-closed',
+        conditions: [],
+      },
     ]);
     expect(res.ok).toBe(false);
   });
@@ -122,9 +131,30 @@ describe('FR-K4-3 / T-SHADOW-1: P1 hook runner hard-locked to shadow', () => {
   it('T-SHADOW-1 PROVOCATION: even with many deny rules, shadow never blocks', () => {
     const { runner } = makeRunner();
     runner.loadRules([
-      { ruleId: 'd1', hookPoint: 'pre-send', actionClass: 'msg', effect: 'deny', failPosture: 'fail-closed', conditions: [] },
-      { ruleId: 'd2', hookPoint: 'pre-tool', actionClass: 'msg', effect: 'deny', failPosture: 'fail-closed', conditions: [] },
-      { ruleId: 'd3', hookPoint: 'pre-commit', actionClass: 'msg', effect: 'deny', failPosture: 'fail-closed', conditions: [] },
+      {
+        ruleId: 'd1',
+        hookPoint: 'pre-send',
+        actionClass: 'msg',
+        effect: 'deny',
+        failPosture: 'fail-closed',
+        conditions: [],
+      },
+      {
+        ruleId: 'd2',
+        hookPoint: 'pre-tool',
+        actionClass: 'msg',
+        effect: 'deny',
+        failPosture: 'fail-closed',
+        conditions: [],
+      },
+      {
+        ruleId: 'd3',
+        hookPoint: 'pre-commit',
+        actionClass: 'msg',
+        effect: 'deny',
+        failPosture: 'fail-closed',
+        conditions: [],
+      },
     ]);
     for (const hp of HOOK_POINTS) {
       const out = runner.evaluate({
@@ -146,7 +176,14 @@ describe('FR-K4-3 / T-SHADOW-1: P1 hook runner hard-locked to shadow', () => {
   it('shadow records the would-be outcome, matched rules, and labels as events', () => {
     const { runner, journal } = makeRunner();
     runner.loadRules([
-      { ruleId: 'adv1', hookPoint: 'pre-send', actionClass: 'msg', effect: 'advise', failPosture: 'fail-open', conditions: [] },
+      {
+        ruleId: 'adv1',
+        hookPoint: 'pre-send',
+        actionClass: 'msg',
+        effect: 'advise',
+        failPosture: 'fail-open',
+        conditions: [],
+      },
     ]);
     runner.evaluate({
       hookPoint: 'pre-send',
@@ -160,5 +197,138 @@ describe('FR-K4-3 / T-SHADOW-1: P1 hook runner hard-locked to shadow', () => {
     expect(ev.payload.labels).toEqual(['external']);
     expect(ev.payload.mode).toBe('shadow');
     expect(ev.payload.decision).toBe('allow');
+  });
+});
+
+describe('FR-K4-1: evaluate wouldBeEffect computation branches', () => {
+  it('a matching advise rule upgrades wouldBeEffect from allow to advise', () => {
+    const { runner } = makeRunner();
+    runner.loadRules([
+      {
+        ruleId: 'a1',
+        hookPoint: 'pre-tool',
+        actionClass: 'x',
+        effect: 'advise',
+        failPosture: 'fail-open',
+        conditions: [],
+      },
+    ]);
+    const out = runner.evaluate({
+      hookPoint: 'pre-tool',
+      actionClass: 'x',
+      payload: {},
+      labels: [],
+    });
+    expect(out.wouldBeEffect).toBe('advise');
+  });
+
+  it('a matching deny rule wins over advise (deny takes priority)', () => {
+    const { runner } = makeRunner();
+    runner.loadRules([
+      {
+        ruleId: 'adv',
+        hookPoint: 'pre-tool',
+        actionClass: 'x',
+        effect: 'advise',
+        failPosture: 'fail-open',
+        conditions: [],
+      },
+      {
+        ruleId: 'deny',
+        hookPoint: 'pre-tool',
+        actionClass: 'x',
+        effect: 'deny',
+        failPosture: 'fail-closed',
+        conditions: [],
+      },
+    ]);
+    const out = runner.evaluate({
+      hookPoint: 'pre-tool',
+      actionClass: 'x',
+      payload: {},
+      labels: [],
+    });
+    expect(out.wouldBeEffect).toBe('deny');
+    expect(out.matchedRules).toContain('adv');
+    expect(out.matchedRules).toContain('deny');
+  });
+
+  it('non-matching rules (different hookPoint) do not affect wouldBeEffect', () => {
+    const { runner } = makeRunner();
+    runner.loadRules([
+      {
+        ruleId: 'r1',
+        hookPoint: 'pre-commit',
+        actionClass: 'x',
+        effect: 'deny',
+        failPosture: 'fail-closed',
+        conditions: [],
+      },
+    ]);
+    const out = runner.evaluate({
+      hookPoint: 'pre-tool',
+      actionClass: 'x',
+      payload: {},
+      labels: [],
+    });
+    expect(out.wouldBeEffect).toBe('allow');
+    expect(out.matchedRules).toEqual([]);
+  });
+
+  it('non-matching rules (different actionClass) do not affect wouldBeEffect', () => {
+    const { runner } = makeRunner();
+    runner.loadRules([
+      {
+        ruleId: 'r1',
+        hookPoint: 'pre-tool',
+        actionClass: 'other',
+        effect: 'deny',
+        failPosture: 'fail-closed',
+        conditions: [],
+      },
+    ]);
+    const out = runner.evaluate({
+      hookPoint: 'pre-tool',
+      actionClass: 'x',
+      payload: {},
+      labels: [],
+    });
+    expect(out.wouldBeEffect).toBe('allow');
+    expect(out.matchedRules).toEqual([]);
+  });
+});
+
+describe('FR-K4-3: enforced branch (line 143) — always false in P1', () => {
+  it('the enforced branch is never taken in P1 (enforcedClasses is private and empty)', () => {
+    // In P1, enforcedClasses is always empty, so enforced=false and the
+    // decision branch (line 143) is never entered. We verify the invariant:
+    // decision is always 'allow' regardless of wouldBeEffect.
+    const { runner } = makeRunner();
+    runner.loadRules([
+      {
+        ruleId: 'd1',
+        hookPoint: 'pre-tool',
+        actionClass: 'x',
+        effect: 'deny',
+        failPosture: 'fail-closed',
+        conditions: [],
+      },
+    ]);
+    const out = runner.evaluate({
+      hookPoint: 'pre-tool',
+      actionClass: 'x',
+      payload: {},
+      labels: [],
+    });
+    // enforced is false => the decision branch (line 143) is skipped => 'allow'.
+    expect(out.enforced).toBe(false);
+    expect(out.decision).toBe('allow');
+  });
+
+  it('isEnforced returns false for every action class in P1', () => {
+    const { runner } = makeRunner();
+    expect(runner.isEnforced('file.write')).toBe(false);
+    expect(runner.isEnforced('msg.send')).toBe(false);
+    expect(runner.isEnforced('commit')).toBe(false);
   });
 });

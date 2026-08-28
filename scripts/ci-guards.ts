@@ -13,9 +13,8 @@
  * [P1] (trace: C-02, C-03, C-04, C-09, NFR-10; DEC-22, DEC-41)
  */
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -141,7 +140,9 @@ function checkPlanesGate(): void {
   // P1 gate: only .gitkeep or empty marker files allowed; no .ts implementation
   const tsFiles = files.filter((f) => f.endsWith('.ts'));
   for (const f of tsFiles) {
-    fail(`C-03 violation: implementation source ${relative(SRC, f)} in src/planes before its phase gate`);
+    fail(
+      `C-03 violation: implementation source ${relative(SRC, f)} in src/planes before its phase gate`,
+    );
   }
 }
 

@@ -9,10 +9,11 @@
  *
  * @forge-trace {"component_id":"test-fixtures-golden-journal","problems":["P74","P08"],"heritage":["K05"],"decisions":["DEC-01"],"bp_ids":[],"ac_ids":[]}
  */
+import { canonicalJson } from '../../src/kernel/canonical-json.js';
 import { EventJournal } from '../../src/kernel/event-journal.js';
 import { MemoryJournalStorage } from '../../src/kernel/storage-memory.js';
 import { sha256Hex } from '../../src/lib/hash.js';
-import { canonicalJson } from '../../src/kernel/canonical-json.js';
+
 import type { JournalEvent, VerifyResult } from '../../src/kernel/event-journal.js';
 import type { StoredEventRow } from '../../src/kernel/storage-port.js';
 

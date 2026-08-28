@@ -5,6 +5,7 @@
  * @forge-trace {"component_id":"test-golden-fixtures","problems":["P74","P08"],"heritage":["K05"],"decisions":["DEC-01"],"bp_ids":[],"ac_ids":[]}
  */
 import { describe, it, expect } from 'vitest';
+
 import {
   buildGoldenCleanJournal,
   buildGoldenCorruptedJournal,

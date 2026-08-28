@@ -3,10 +3,12 @@
  *
  * @forge-trace {"component_id":"test-contract-store","problems":["P01","P04","P14","P16","P22","P90"],"heritage":["K02","K04","K05","K07","K08"],"decisions":["DEC-01","DEC-22"],"bp_ids":[],"ac_ids":["AC-P01"]}
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
+
+import { canonicalJson } from '../../src/kernel/canonical-json.js';
 import { ContractStore } from '../../src/kernel/contract-store.js';
 import { sha256Hex } from '../../src/lib/hash.js';
-import { canonicalJson } from '../../src/kernel/canonical-json.js';
+
 import type { Artifact, Frontmatter } from '../../src/kernel/contract-store.js';
 
 function makeStore(): ContractStore {
@@ -122,10 +124,17 @@ describe('FR-K2-4: supersession requires reason + visible tombstone', () => {
   it('supersedes an artifact with an explicit reason and creates a tombstone', () => {
     const s = makeStore();
     const old = makeArtifact({ artifactId: 'old1' });
-    const newer = makeArtifact({ artifactId: 'new1', supersedes: { artifactId: 'old1', reason: 'revised plan' } });
+    const newer = makeArtifact({
+      artifactId: 'new1',
+      supersedes: { artifactId: 'old1', reason: 'revised plan' },
+    });
     s.store(old);
     s.store(newer);
-    const res = s.supersede({ oldArtifactId: 'old1', newArtifactId: 'new1', reason: 'revised plan' });
+    const res = s.supersede({
+      oldArtifactId: 'old1',
+      newArtifactId: 'new1',
+      reason: 'revised plan',
+    });
     expect(res.ok).toBe(true);
     // Old moved to deprecated tree with tombstone.
     const dep = s.getDeprecated('old1');
@@ -201,5 +210,107 @@ describe('Trust label derivation (DEC-42.1 / FR-S4-6)', () => {
     expect(deriveTrustLabel(['trusted/user', 'web/untrusted'])).toBe('web/untrusted');
     expect(deriveTrustLabel(['tool-output', 'trusted/user'])).toBe('tool-output');
     expect(deriveTrustLabel([])).toBe('derived');
+  });
+});
+
+describe('FR-K2-1: listByType', () => {
+  it('returns artifacts filtered by type', () => {
+    const s = makeStore();
+    s.store(makeArtifact({ artifactId: 'tc1', artifactType: 'TaskContract' }));
+    s.store(makeArtifact({ artifactId: 'tc2', artifactType: 'TaskContract' }));
+    s.store(makeArtifact({ artifactId: 'pa1', artifactType: 'PlanArtifact' }));
+    const tcs = s.listByType('TaskContract');
+    expect(tcs.length).toBe(2);
+    expect(tcs.map((a) => a.frontmatter.artifactId)).toContain('tc1');
+    expect(tcs.map((a) => a.frontmatter.artifactId)).toContain('tc2');
+  });
+
+  it('returns an empty array for a type with no artifacts', () => {
+    const s = makeStore();
+    s.store(makeArtifact({ artifactId: 'tc1', artifactType: 'TaskContract' }));
+    expect(s.listByType('PlanArtifact')).toEqual([]);
+  });
+
+  it('returns an empty array on a fresh store', () => {
+    const s = makeStore();
+    expect(s.listByType('TaskContract')).toEqual([]);
+  });
+});
+
+describe('FR-K2-4: supersede error paths', () => {
+  it('PROVOCATION: supersede fails when the old artifact is not found', () => {
+    const s = makeStore();
+    const newer = makeArtifact({ artifactId: 'newX' });
+    s.store(newer);
+    const res = s.supersede({ oldArtifactId: 'missing', newArtifactId: 'newX', reason: 'r' });
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.reason).toContain("artifact 'missing' not found");
+    }
+  });
+
+  it('PROVOCATION: supersede fails when the successor artifact is not found', () => {
+    const s = makeStore();
+    const old = makeArtifact({ artifactId: 'oldY' });
+    s.store(old);
+    const res = s.supersede({ oldArtifactId: 'oldY', newArtifactId: 'missing', reason: 'r' });
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.reason).toContain("successor 'missing' not found");
+    }
+  });
+
+  it('PROVOCATION: supersede fails when both artifacts are missing', () => {
+    const s = makeStore();
+    const res = s.supersede({ oldArtifactId: 'a', newArtifactId: 'b', reason: 'r' });
+    expect(res.ok).toBe(false);
+  });
+});
+
+describe('FR-K2-5: list + get edge cases', () => {
+  it('list returns an empty array on a fresh store', () => {
+    const s = makeStore();
+    expect(s.list()).toEqual([]);
+  });
+
+  it('get returns null for a missing artifact', () => {
+    const s = makeStore();
+    expect(s.get('nope')).toBeNull();
+  });
+
+  it('getDeprecated returns null for a non-deprecated artifact', () => {
+    const s = makeStore();
+    expect(s.getDeprecated('nope')).toBeNull();
+  });
+
+  it('historyOf returns an empty array for an artifact with no history', () => {
+    const s = makeStore();
+    expect(s.historyOf('nope')).toEqual([]);
+  });
+});
+
+describe('FR-K2-3: validate edge cases', () => {
+  it('PROVOCATION: rejects a non-object artifact', () => {
+    const s = makeStore();
+    const res = s.validate('not an object');
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.errors).toContain('artifact must be an object');
+    }
+  });
+
+  it('PROVOCATION: rejects null', () => {
+    const s = makeStore();
+    const res = s.validate(null);
+    expect(res.ok).toBe(false);
+  });
+
+  it('PROVOCATION: rejects an object with non-string body', () => {
+    const s = makeStore();
+    const res = s.validate({ frontmatter: makeFrontmatter(), body: 42 });
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.errors.some((e) => e.includes('body must be a string'))).toBe(true);
+    }
   });
 });

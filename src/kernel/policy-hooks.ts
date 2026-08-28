@@ -16,6 +16,7 @@
  * @forge-trace {"component_id":"kernel-policy-hooks","problems":["P10","P09","P83","P92","P13","P30"],"heritage":["E02"],"decisions":["DEC-01","DEC-30","DEC-35"],"bp_ids":[],"ac_ids":[]}
  */
 import { z } from 'zod';
+
 import type { EventJournal } from './event-journal.js';
 
 /** The exactly five hook points (FR-K4-1). */
@@ -79,7 +80,7 @@ export class PolicyHookRunner {
   private readonly journal: EventJournal;
   private readonly rules: PolicyRule[] = [];
   /** P1: hard-locked to shadow. Enforce mode is P8 (FR-K4-4). */
-  private readonly mode: 'shadow' = 'shadow';
+  private readonly mode = 'shadow' as const;
   /** Action classes flipped to enforce (P8 only; empty in P1). */
   private readonly enforcedClasses: Set<string> = new Set();
 
@@ -140,7 +141,8 @@ export class PolicyHookRunner {
     // The decision delivered to the caller is 'allow' unless enforced.
     let decision: HookOutcome['decision'] = 'allow';
     if (enforced) {
-      decision = wouldBeEffect === 'deny' ? 'deny' : wouldBeEffect === 'advise' ? 'advise' : 'allow';
+      decision =
+        wouldBeEffect === 'deny' ? 'deny' : wouldBeEffect === 'advise' ? 'advise' : 'allow';
     }
     // In shadow, decision is always 'allow' (T-SHADOW-1 invariant).
 
