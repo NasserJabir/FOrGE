@@ -20,6 +20,7 @@ Format: `<kernel|lib|cli|plane>-<name>`
 | component_id           | Path                          | Phase | Summary                                                                               |
 | ---------------------- | ----------------------------- | ----- | ------------------------------------------------------------------------------------- |
 | kernel-claim           | src/kernel/claim.ts           | P3    | K-S4 Claim entity + state machine (FR-S4-1/2/3/4) — intake floor, DEC-27              |
+| kernel-staleness       | src/kernel/staleness.ts       | P3    | K-S4 Staleness + zero-model-call (FR-S4-5/9) — pure hash comparison, DEC-42.1         |
 | kernel-canonical-json  | src/kernel/canonical-json.ts  | P1    | Fixed canonical JSON algorithm (sorted keys, no whitespace, UTF-8)                    |
 | kernel-event-journal   | src/kernel/event-journal.ts   | P1    | K-1 append-only content-addressed event journal                                       |
 | kernel-contract-store  | src/kernel/contract-store.ts  | P1    | K-2 typed Tier-A artifact store                                                       |
