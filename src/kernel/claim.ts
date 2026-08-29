@@ -27,7 +27,7 @@ import { sha256Hex } from '../lib/hash.js';
 import { ulid } from '../lib/ulid.js';
 
 import { canonicalJson } from './canonical-json.js';
-import { type TrustLabel } from './trust-label.js';
+import { type TrustLabel, weakestOf } from './trust-label.js';
 
 import type { ContractStore, Artifact, Frontmatter, LifecycleState } from './contract-store.js';
 import type { EventJournal } from './event-journal.js';
@@ -220,6 +220,15 @@ export class ClaimStore {
       pinned_at?: string;
     }>;
     trustLabel: TrustLabel;
+    /**
+     * FR-S4-6: optional contributing source trust labels. When provided, the
+     * enforced trust_label is computed as the weakest of these sources via
+     * `weakestOf()` — the caller's asserted `trustLabel` is overridden. When
+     * omitted (single-source direct intake), the caller's `trustLabel` is
+     * used as-is. This is the enforced milestone of FR-S4-6: trust_label is
+     * computed at creation as the weakest of contributing sources.
+     */
+    sourceLabels?: TrustLabel[];
     stalenessMode: StalenessMode;
     supersedes?: { claimId: string; reason: string };
     originAgent: string;
@@ -236,6 +245,17 @@ export class ClaimStore {
       };
     }
 
+    // FR-S4-6 / DEC-42.1: enforce trust_label as the weakest of contributing
+    // sources at creation. If sourceLabels are provided, the enforced label is
+    // weakestOf(sourceLabels) — the caller's asserted trustLabel is ignored
+    // (prevents trust-laundering by asserting a strong label over weak
+    // sources). If no sourceLabels are given (direct single-source intake),
+    // the caller's trustLabel is used as the single source.
+    const enforcedTrustLabel =
+      input.sourceLabels !== undefined && input.sourceLabels.length > 0
+        ? weakestOf(input.sourceLabels)
+        : input.trustLabel;
+
     const claimId = `cg-${ulid()}`;
     const now = new Date().toISOString();
 
@@ -249,7 +269,7 @@ export class ClaimStore {
       state: 'proposed',
       evidenceRef: normalizeEvidenceRef(input.evidenceRef),
       additionalEvidence: input.additionalEvidence?.map(normalizeEvidenceRef),
-      trustLabel: input.trustLabel,
+      trustLabel: enforcedTrustLabel,
       stalenessMode: input.stalenessMode,
       supersedes: input.supersedes,
       originAgent: input.originAgent,

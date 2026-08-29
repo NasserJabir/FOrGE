@@ -25,6 +25,7 @@ Format: `<kernel|lib|cli|plane>-<name>`
 | kernel-conflict-resolver | src/kernel/conflict-resolver.ts | P3    | K-S4 Conflict resolution (FR-S4-11) — 4-step precedence, no newer-wins, DEC-27        |
 | kernel-scope-bleed       | src/kernel/scope-bleed.ts       | P3    | K-S4 Scope-bleed guard (FR-S4-12) — private→shared gate, anti-bleed, DEC-27           |
 | kernel-forgetting        | src/kernel/forgetting.ts        | P3    | K-S4 Forgetting service (FR-S4-13) — reversible archive, tombstones, no silent delete |
+| kernel-evidence-ref      | src/kernel/evidence-ref.ts      | P3    | K-S4 EvidenceRef + trust label enforcement (FR-S4-6/7) — weakest-of, DEC-42.1/42.2    |
 | kernel-canonical-json    | src/kernel/canonical-json.ts    | P1    | Fixed canonical JSON algorithm (sorted keys, no whitespace, UTF-8)                    |
 | kernel-event-journal     | src/kernel/event-journal.ts     | P1    | K-1 append-only content-addressed event journal                                       |
 | kernel-contract-store    | src/kernel/contract-store.ts    | P1    | K-2 typed Tier-A artifact store                                                       |
